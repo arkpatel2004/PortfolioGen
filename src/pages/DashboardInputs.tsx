@@ -73,8 +73,8 @@ const DashboardInputs: React.FC = () => {
   ];
 
   const handlePreviewPortfolio = (templateId: number) => {
-    // Will open template preview in new tab - functionality to be implemented later
-    console.log('Preview portfolio template:', templateId);
+    const templateUrl = `/templates/portfolio${templateId}.html`;
+    window.open(templateUrl, '_blank');
   };
 
   const handlePreviewResume = (templateId: number) => {
