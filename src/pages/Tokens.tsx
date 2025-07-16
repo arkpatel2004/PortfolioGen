@@ -27,16 +27,6 @@ const Tokens: React.FC = () => {
             <p className="text-blue-100">tokens remaining</p>
           </div>
         </div>
-
-        <div className="mt-8 p-4 bg-white/10 backdrop-blur rounded-xl">
-          <div className="flex items-center justify-between text-sm">
-            <span>Token Usage This Month</span>
-            <span>23 / 50 used</span>
-          </div>
-          <div className="mt-2 w-full bg-white/20 rounded-full h-2">
-            <div className="bg-white h-2 rounded-full" style={{ width: '46%' }}></div>
-          </div>
-        </div>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-8">
@@ -71,7 +61,7 @@ const Tokens: React.FC = () => {
             </button>
             
             <p className="text-sm text-gray-500 mt-4">
-              You can watch up to 5 ads per day
+              Watch ads to earn free tokens
             </p>
           </div>
         </div>
@@ -110,19 +100,6 @@ const Tokens: React.FC = () => {
             </div>
           </div>
 
-          <div className="mt-6 p-4 bg-gray-50 rounded-xl">
-            <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
-              <Clock className="w-4 h-4" />
-              <span>Daily Ad Limit</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-700">Ads watched today</span>
-              <span className="font-semibold text-gray-900">2 / 5</span>
-            </div>
-            <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
-              <div className="bg-green-500 h-2 rounded-full" style={{ width: '40%' }}></div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -139,7 +116,7 @@ const Tokens: React.FC = () => {
               <Play className="w-6 h-6" />
             </div>
             <p className="font-medium text-gray-900 mb-2">Watch Advertisements</p>
-            <p className="text-sm text-gray-600">Watch short ads to earn 1 token each (up to 5 per day)</p>
+            <p className="text-sm text-gray-600">Watch short ads to earn 1 token each</p>
           </div>
           
           <div className="text-center">

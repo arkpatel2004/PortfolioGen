@@ -44,7 +44,30 @@ const Sidebar: React.FC = () => {
         {/* Header */}
         <div className="h-16 border-b border-gray-200 flex items-center justify-center px-4">
           {isExpanded ? (
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center justify-between w-full">
+              <button
+                onClick={() => setIsExpanded(false)}
+                className="p-2 rounded-xl hover:bg-gray-100 transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                  <Zap className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-lg font-bold text-gray-900">PortfolioGen</span>
+              </div>
+              <div className="w-9"></div> {/* Spacer for centering */}
+            </div>
+          ) : (
+            <button
+              onClick={toggleSidebar}
+              className="p-2 rounded-xl hover:bg-gray-100 transition-colors"
+            >
+              <Menu className="w-6 h-6 text-gray-600" />
+            </button>
+          )}
+        </div>
               <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                 <Zap className="w-5 h-5 text-white" />
               </div>
