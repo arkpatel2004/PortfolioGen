@@ -73,8 +73,21 @@ const DashboardInputs: React.FC = () => {
   ];
 
   const handlePreviewPortfolio = (templateId: number) => {
-    const templateUrl = `/templates/portfolio${templateId}.html`;
-    window.open(templateUrl, '_blank');
+    // Fetch the HTML content and open in new tab using Blob
+    fetch(`/templates/portfolio${templateId}.html`)
+      .then(response => response.text())
+      .then(htmlContent => {
+        const blob = new Blob([htmlContent], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        
+        // Clean up the object URL after a short delay
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      })
+      .catch(error => {
+        console.error('Error loading portfolio template:', error);
+        alert('Error loading portfolio template. Please try again.');
+      });
   };
 
   const handlePreviewResume = (templateId: number) => {
