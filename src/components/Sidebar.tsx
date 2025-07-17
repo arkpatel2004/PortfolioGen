@@ -55,7 +55,7 @@ const Sidebar: React.FC = () => {
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                   <Zap className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-lg font-bold text-gray-900">Niyu</span>
+                <span className="text-lg font-bold text-gray-900">PortfolioGen</span>
               </div>
               <div className="w-9"></div> {/* Spacer for centering */}
             </div>
