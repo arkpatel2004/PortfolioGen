@@ -91,8 +91,21 @@ const DashboardInputs: React.FC = () => {
   };
 
   const handlePreviewResume = (templateId: number) => {
-    // Will open template preview in new tab - functionality to be implemented later
-    console.log('Preview resume template:', templateId);
+    // Fetch the HTML content and open in new tab using Blob
+    fetch(`/templates/resume${templateId}.html`)
+      .then(response => response.text())
+      .then(htmlContent => {
+        const blob = new Blob([htmlContent], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        
+        // Clean up the object URL after a short delay
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      })
+      .catch(error => {
+        console.error('Error loading resume template:', error);
+        alert('Error loading resume template. Please try again.');
+      });
   };
 
   return (
