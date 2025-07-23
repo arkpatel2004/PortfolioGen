@@ -69,6 +69,12 @@ const DashboardInputs: React.FC = () => {
       name: 'Resume 4',
       image: 'https://images.pexels.com/photos/590018/pexels-photo-590018.jpg?auto=compress&cs=tinysrgb&w=400',
       description: 'Minimalist approach'
+    },
+    {
+      id: 5,
+      name: 'Resume 5',
+      image: 'https://images.pexels.com/photos/590024/pexels-photo-590024.jpg?auto=compress&cs=tinysrgb&w=400',
+      description: 'Simple professional layout'
     }
   ];
 
@@ -263,7 +269,7 @@ const DashboardInputs: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-5 gap-4">
             {resumeTemplates.map((template) => (
               <div
                 key={template.id}
