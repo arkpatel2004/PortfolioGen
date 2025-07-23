@@ -69,6 +69,12 @@ const DashboardInputs: React.FC = () => {
       name: 'Resume 4',
       image: 'https://images.pexels.com/photos/590018/pexels-photo-590018.jpg?auto=compress&cs=tinysrgb&w=400',
       description: 'Minimalist approach'
+    },
+    {
+      id: 5,
+      name: 'Resume 5',
+      image: 'https://images.pexels.com/photos/590024/pexels-photo-590024.jpg?auto=compress&cs=tinysrgb&w=400',
+      description: 'Simple professional layout'
     }
   ];
 
@@ -91,8 +97,21 @@ const DashboardInputs: React.FC = () => {
   };
 
   const handlePreviewResume = (templateId: number) => {
-    // Will open template preview in new tab - functionality to be implemented later
-    console.log('Preview resume template:', templateId);
+    // Fetch the HTML content and open in new tab using Blob
+    fetch(`/templates/resume${templateId}.html`)
+      .then(response => response.text())
+      .then(htmlContent => {
+        const blob = new Blob([htmlContent], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        
+        // Clean up the object URL after a short delay
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      })
+      .catch(error => {
+        console.error('Error loading resume template:', error);
+        alert('Error loading resume template. Please try again.');
+      });
   };
 
   return (
@@ -250,7 +269,7 @@ const DashboardInputs: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-5 gap-4">
             {resumeTemplates.map((template) => (
               <div
                 key={template.id}

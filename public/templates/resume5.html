@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Professional Resume</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f9f9f9;
+            padding: 20px;
+        }
+        
+        .resume-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: white;
+            color: #333;
+            padding: 40px 40px 30px;
+            text-align: center;
+            border-bottom: 1px solid #e5e5e5;
+        }
+        
+        .name {
+            font-size: 2.2em;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+        
+        .title {
+            font-size: 1.1em;
+            color: #666;
+            margin-bottom: 20px;
+            font-weight: 400;
+        }
+        
+        .contact-info {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 25px;
+            font-size: 0.9em;
+            color: #555;
+        }
+        
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .content {
+            padding: 35px 40px;
+        }
+        
+        .section {
+            margin-bottom: 35px;
+        }
+        
+        .section-title {
+            font-size: 1.2em;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 8px;
+        }
+        
+        .experience-item, .education-item {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .experience-item:last-child, .education-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        
+        .job-title, .degree {
+            font-weight: 600;
+            font-size: 1.1em;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        
+        .company, .school {
+            color: #555;
+            font-weight: 500;
+            font-size: 1em;
+        }
+        
+        .date {
+            color: #888;
+            font-size: 0.9em;
+            margin: 5px 0 10px 0;
+            font-style: italic;
+        }
+        
+        .description {
+            color: #555;
+            margin-top: 10px;
+            line-height: 1.7;
+        }
+        
+        .skills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .skill-tag {
+            background: #f8f9fa;
+            color: #495057;
+            padding: 6px 14px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        
+        /* Commented out download button */
+        /*
+        .download-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #2c3e50;
+            color: white;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(44, 62, 80, 0.2);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .download-btn:hover {
+            background: #34495e;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(44, 62, 80, 0.3);
+        }
+        */
+        
+        .summary {
+            background: #fafafa;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            color: #555;
+            line-height: 1.7;
+        }
+        
+        .bullet-points {
+            list-style: none;
+            margin-top: 10px;
+        }
+        
+        .bullet-points li {
+            position: relative;
+            padding-left: 20px;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        
+        .bullet-points li:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #2c3e50;
+            font-weight: bold;
+        }
+        
+        @media print {
+            body { background: white; padding: 0; }
+            .resume-container { box-shadow: none; border-radius: 0; }
+            .download-btn { display: none; }
+        }
+        
+        @media (max-width: 768px) {
+            .contact-info { flex-direction: column; align-items: center; gap: 10px; }
+            .content, .header { padding: 20px; }
+            .name { font-size: 1.8em; }
+            .download-btn { position: relative; top: auto; right: auto; margin: 0 auto 20px; display: block; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Commented out download button -->
+    <!-- <button class="download-btn" onclick="downloadAsWord()">📥 Download as Word</button> -->
+    
+    <div class="resume-container" id="resume">
+        <div class="header">
+            <div class="name">John Doe</div>
+            <div class="title">Senior Software Engineer</div>
+            <div class="contact-info">
+                <div class="contact-item">📧 john.doe@email.com</div>
+                <div class="contact-item">📱 +1 (555) 123-4567</div>
+                <div class="contact-item">📍 San Francisco, CA</div>
+                <div class="contact-item">💼 linkedin.com/in/johndoe</div>
+                <div class="contact-item">🔗 github.com/johndoe</div>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="section">
+                <div class="section-title">Professional Summary</div>
+                <div class="summary">
+                    Experienced software engineer with 8+ years of expertise in full-stack development, cloud technologies, and team leadership. Proven track record of delivering scalable solutions and mentoring junior developers. Passionate about clean code, innovative problem-solving, and driving technical excellence.
+                </div>
+            </div>
+            
+            <div class="section">
+                <div class="section-title">Experience</div>
+                <div class="experience-item">
+                    <div class="job-title">Senior Software Engineer</div>
+                    <div class="company">Tech Solutions Inc.</div>
+                    <div class="date">January 2020 - Present</div>
+                    <ul class="bullet-points">
+                        <li>Led development of microservices architecture serving 1M+ users daily</li>
+                        <li>Mentored team of 5 junior developers and conducted code reviews</li>
+                        <li>Improved application performance by 40% through optimization techniques</li>
+                        <li>Implemented CI/CD pipelines reducing deployment time by 60%</li>
+                    </ul>
+                </div>
+                
+                <div class="experience-item">
+                    <div class="job-title">Software Developer</div>
+                    <div class="company">Innovation Labs</div>
+                    <div class="date">June 2018 - December 2019</div>
+                    <ul class="bullet-points">
+                        <li>Developed responsive web applications using React and Node.js</li>
+                        <li>Collaborated with cross-functional teams to deliver features on time</li>
+                        <li>Integrated third-party APIs and payment processing systems</li>
+                        <li>Maintained code quality with 95%+ test coverage</li>
+                    </ul>
+                </div>
+                
+                <div class="experience-item">
+                    <div class="job-title">Junior Developer</div>
+                    <div class="company">StartUp Ventures</div>
+                    <div class="date">August 2016 - May 2018</div>
+                    <ul class="bullet-points">
+                        <li>Built RESTful APIs and database schemas</li>
+                        <li>Participated in agile development processes</li>
+                        <li>Contributed to open-source projects and company documentation</li>
+                        <li>Gained experience in multiple programming languages and frameworks</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="section">
+                <div class="section-title">Education</div>
+                <div class="education-item">
+                    <div class="degree">Bachelor of Science in Computer Science</div>
+                    <div class="school">University of Technology</div>
+                    <div class="date">2012 - 2016</div>
+                    <div class="description">
+                        Graduated Magna Cum Laude • GPA: 3.8/4.0 • Dean's List (6 semesters)
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <div class="section-title">Technical Skills</div>
+                <div class="skills">
+                    <div class="skill-tag">JavaScript</div>
+                    <div class="skill-tag">Python</div>
+                    <div class="skill-tag">React</div>
+                    <div class="skill-tag">Node.js</div>
+                    <div class="skill-tag">MongoDB</div>
+                    <div class="skill-tag">PostgreSQL</div>
+                    <div class="skill-tag">AWS</div>
+                    <div class="skill-tag">Docker</div>
+                    <div class="skill-tag">Git</div>
+                    <div class="skill-tag">TypeScript</div>
+                    <div class="skill-tag">GraphQL</div>
+                    <div class="skill-tag">Redis</div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <div class="section-title">Certifications</div>
+                <div class="education-item">
+                    <div class="degree">AWS Certified Solutions Architect</div>
+                    <div class="date">2023</div>
+                </div>
+                <div class="education-item">
+                    <div class="degree">Certified Scrum Master (CSM)</div>
+                    <div class="date">2022</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Commented out download functionality -->
+    <!--
+    <script>
+        function downloadAsWord() {
+            // Download functionality commented out for future use
+        }
+    </script>
+    -->
+</body>
+</html>

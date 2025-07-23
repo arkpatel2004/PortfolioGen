@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classic Professional Resume</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.5;
+            color: #000;
+            background: #f9f9f9;
+            padding: 20px;
+            font-size: 11pt;
+        }
+        
+        .resume-container {
+            max-width: 8.5in;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border-radius: 5px;
+        }
+        
+        .header {
+            margin-bottom: 35px;
+        }
+        
+        .name {
+            font-size: 22pt;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .title {
+            font-size: 14pt;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .contact-info {
+            border-top: 1px solid #000;
+            border-bottom: 1px solid #000;
+            padding: 10px 0;
+            margin-bottom: 5px;
+        }
+        
+        .contact-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 3px;
+        }
+        
+        .contact-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-size: 12pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 2px;
+        }
+        
+        .two-column-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+        
+        .experience-item {
+            margin-bottom: 18px;
+        }
+        
+        .job-info {
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+        
+        .company-location {
+            font-style: italic;
+            margin-bottom: 3px;
+            color: #444;
+        }
+        
+        .job-dates {
+            font-size: 10pt;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .responsibilities {
+            margin-left: 0;
+        }
+        
+        .responsibilities ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .responsibilities li {
+            margin-bottom: 4px;
+            text-align: justify;
+        }
+        
+        .education-item {
+            margin-bottom: 15px;
+        }
+        
+        .degree-info {
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+        
+        .school-info {
+            color: #444;
+            margin-bottom: 2px;
+        }
+        
+        .education-dates {
+            font-size: 10pt;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .education-details {
+            font-size: 10pt;
+        }
+        
+        .skills-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+        }
+        
+        .skill-group {
+            min-width: 150px;
+        }
+        
+        .skill-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-decoration: underline;
+        }
+        
+        .skill-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .skill-list li {
+            margin-bottom: 2px;
+        }
+        
+        .objective {
+            text-align: justify;
+            margin-bottom: 10px;
+        }
+        
+        /* Commented out download button */
+        /*
+        .download-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #333;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            cursor: pointer;
+            font-size: 10pt;
+            z-index: 1000;
+        }
+        
+        .download-btn:hover {
+            background: #555;
+        }
+        */
+        
+        .certifications-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .certifications-list li {
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .cert-name {
+            font-weight: bold;
+        }
+        
+        .cert-date {
+            color: #666;
+            font-size: 10pt;
+        }
+        
+        @media print {
+            body { 
+                padding: 0; 
+            }
+            .resume-container { 
+                margin: 0;
+                padding: 20px;
+                max-width: none;
+            }
+            .download-btn { 
+                display: none; 
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .two-column-layout {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            .contact-row {
+                flex-direction: column;
+            }
+            .skills-section {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Commented out download button -->
+    <!-- <button class="download-btn" onclick="downloadAsWord()">Download</button> -->
+    
+    <div class="resume-container" id="resume">
+        <div class="header">
+            <div class="name">Jennifer Martinez</div>
+            <div class="title">Business Analyst</div>
+            <div class="contact-info">
+                <div class="contact-row">
+                    <span>456 Oak Avenue, Chicago, IL 60601</span>
+                    <span>Phone: (312) 555-7890</span>
+                </div>
+                <div class="contact-row">
+                    <span>Email: jennifer.martinez@email.com</span>
+                    <span>LinkedIn: linkedin.com/in/jennifermartinez</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">Professional Summary</div>
+            <div class="objective">
+                Detail-oriented Business Analyst with 5+ years of experience in data analysis, process improvement, and stakeholder management. Proven ability to translate complex business requirements into actionable solutions. Expertise in financial modeling, system analysis, and cross-functional collaboration to drive operational efficiency and business growth.
+            </div>
+        </div>
+        
+        <div class="two-column-layout">
+            <div>
+                <div class="section">
+                    <div class="section-title">Work Experience</div>
+                    
+                    <div class="experience-item">
+                        <div class="job-info">Senior Business Analyst</div>
+                        <div class="company-location">Financial Services Corp, Chicago, IL</div>
+                        <div class="job-dates">August 2021 - Present</div>
+                        <div class="responsibilities">
+                            <ul>
+                                <li>Analyzed business processes and identified opportunities for improvement, resulting in 25% increase in operational efficiency</li>
+                                <li>Collaborated with IT teams to design and implement new reporting systems serving 500+ users</li>
+                                <li>Conducted stakeholder interviews and documented functional requirements for system enhancements</li>
+                                <li>Created financial models and dashboards to support executive decision-making</li>
+                                <li>Led cross-functional project teams through system implementations and process changes</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="experience-item">
+                        <div class="job-info">Business Analyst</div>
+                        <div class="company-location">Metro Healthcare Solutions, Chicago, IL</div>
+                        <div class="job-dates">January 2019 - July 2021</div>
+                        <div class="responsibilities">
+                            <ul>
+                                <li>Performed data analysis on patient care metrics and operational workflows</li>
+                                <li>Developed process documentation and training materials for new procedures</li>
+                                <li>Supported implementation of electronic health record system across 3 facilities</li>
+                                <li>Created detailed business requirement documents and test plans</li>
+                                <li>Facilitated meetings between clinical staff and technology teams</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="experience-item">
+                        <div class="job-info">Junior Business Analyst</div>
+                        <div class="company-location">Consulting Partners LLC, Evanston, IL</div>
+                        <div class="job-dates">June 2017 - December 2018</div>
+                        <div class="responsibilities">
+                            <ul>
+                                <li>Assisted senior analysts with data collection and preliminary analysis</li>
+                                <li>Prepared client presentations and status reports for project stakeholders</li>
+                                <li>Conducted research on industry best practices and competitive analysis</li>
+                                <li>Maintained project documentation and tracked deliverable timelines</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <div class="section">
+                    <div class="section-title">Education</div>
+                    
+                    <div class="education-item">
+                        <div class="degree-info">Master of Science in Business Analytics</div>
+                        <div class="school-info">Northwestern University, Evanston, IL</div>
+                        <div class="education-dates">2015 - 2017</div>
+                        <div class="education-details">GPA: 3.8/4.0 | Graduate Research Assistant</div>
+                    </div>
+                    
+                    <div class="education-item">
+                        <div class="degree-info">Bachelor of Science in Economics</div>
+                        <div class="school-info">University of Illinois at Chicago</div>
+                        <div class="education-dates">2011 - 2015</div>
+                        <div class="education-details">Cum Laude | Economics Honor Society</div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <div class="section-title">Technical Skills</div>
+                    <div class="skills-section">
+                        <div class="skill-group">
+                            <div class="skill-title">Analytics:</div>
+                            <ul class="skill-list">
+                                <li>SQL</li>
+                                <li>Python</li>
+                                <li>R</li>
+                                <li>Tableau</li>
+                                <li>Power BI</li>
+                            </ul>
+                        </div>
+                        <div class="skill-group">
+                            <div class="skill-title">Business:</div>
+                            <ul class="skill-list">
+                                <li>Process Mapping</li>
+                                <li>Requirements Analysis</li>
+                                <li>Financial Modeling</li>
+                                <li>Project Management</li>
+                                <li>Stakeholder Management</li>
+                            </ul>
+                        </div>
+                        <div class="skill-group">
+                            <div class="skill-title">Software:</div>
+                            <ul class="skill-list">
+                                <li>Microsoft Office Suite</li>
+                                <li>Visio</li>
+                                <li>Jira</li>
+                                <li>Confluence</li>
+                                <li>SharePoint</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <div class="section-title">Certifications</div>
+                    <ul class="certifications-list">
+                        <li>
+                            <span class="cert-name">Certified Business Analysis Professional (CBAP)</span>
+                            <span class="cert-date">2022</span>
+                        </li>
+                        <li>
+                            <span class="cert-name">Tableau Desktop Specialist</span>
+                            <span class="cert-date">2021</span>
+                        </li>
+                        <li>
+                            <span class="cert-name">Microsoft Excel Expert</span>
+                            <span class="cert-date">2020</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="section">
+                    <div class="section-title">Languages</div>
+                    <ul class="skill-list">
+                        <li>English (Native)</li>
+                        <li>Spanish (Fluent)</li>
+                        <li>French (Conversational)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Commented out download functionality -->
+    <!--
+    <script>
+        function downloadAsWord() {
+            // Download functionality commented out for future use
+        }
+    </script>
+    -->
+</body>
+</html>

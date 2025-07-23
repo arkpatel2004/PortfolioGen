@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Resume</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            line-height: 1.6;
+            color: #000;
+            background: #f9f9f9;
+            padding: 20px;
+            font-size: 12pt;
+        }
+        
+        .resume-container {
+            max-width: 8.5in;
+            margin: 0 auto;
+            background: white;
+            padding: 0.5in;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border-radius: 5px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 20px;
+        }
+        
+        .name {
+            font-size: 24pt;
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .contact-line {
+            margin-bottom: 4px;
+            font-size: 11pt;
+        }
+        
+        .section {
+            margin-bottom: 25px;
+        }
+        
+        .section-title {
+            font-size: 14pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #000;
+            margin-bottom: 15px;
+            padding-bottom: 3px;
+        }
+        
+        .experience-item, .education-item {
+            margin-bottom: 20px;
+        }
+        
+        .job-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 5px;
+        }
+        
+        .job-title {
+            font-weight: bold;
+            font-size: 12pt;
+        }
+        
+        .job-date {
+            font-style: italic;
+            font-size: 11pt;
+        }
+        
+        .company-name {
+            font-size: 11pt;
+            margin-bottom: 8px;
+        }
+        
+        .job-description {
+            margin-left: 20px;
+        }
+        
+        .job-description ul {
+            list-style-type: disc;
+            margin-left: 20px;
+        }
+        
+        .job-description li {
+            margin-bottom: 3px;
+            text-align: justify;
+        }
+        
+        .education-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        
+        .degree {
+            font-weight: bold;
+            font-size: 12pt;
+        }
+        
+        .school {
+            font-size: 11pt;
+            margin-bottom: 5px;
+        }
+        
+        .education-details {
+            font-size: 11pt;
+            margin-top: 5px;
+        }
+        
+        .skills-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .skill-category {
+            min-width: 200px;
+        }
+        
+        .skill-category-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-decoration: underline;
+        }
+        
+        .objective-text {
+            text-align: justify;
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        
+        /* Commented out download button */
+        /*
+        .download-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #000;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            cursor: pointer;
+            font-size: 11pt;
+            font-family: 'Times New Roman', Times, serif;
+            z-index: 1000;
+        }
+        
+        .download-btn:hover {
+            background: #333;
+        }
+        */
+        
+        @media print {
+            body { 
+                padding: 0; 
+            }
+            .resume-container { 
+                margin: 0;
+                padding: 0;
+                max-width: none;
+            }
+            .download-btn { 
+                display: none; 
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .job-header, .education-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .job-date {
+                margin-top: 5px;
+            }
+            .skills-list {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Commented out download button -->
+    <!-- <button class="download-btn" onclick="downloadAsWord()">Download Word</button> -->
+    
+    <div class="resume-container" id="resume">
+        <div class="header">
+            <div class="name">David Wilson</div>
+            <div class="contact-line">123 Main Street, Boston, MA 02101</div>
+            <div class="contact-line">Phone: (555) 123-4567 | Email: david.wilson@email.com</div>
+            <div class="contact-line">LinkedIn: linkedin.com/in/davidwilson | Portfolio: davidwilson.com</div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">Objective</div>
+            <div class="objective-text">
+                Experienced project manager with over 8 years of expertise in leading cross-functional teams and delivering complex projects on time and within budget. Seeking to leverage proven track record in process improvement and stakeholder management to drive organizational success in a senior management role.
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">Professional Experience</div>
+            
+            <div class="experience-item">
+                <div class="job-header">
+                    <div>
+                        <div class="job-title">Senior Project Manager</div>
+                        <div class="company-name">Global Tech Solutions, Boston, MA</div>
+                    </div>
+                    <div class="job-date">January 2020 – Present</div>
+                </div>
+                <div class="job-description">
+                    <ul>
+                        <li>Managed portfolio of 12+ concurrent projects with combined budget exceeding $5 million annually</li>
+                        <li>Led cross-functional teams of 15-25 members including developers, designers, and business analysts</li>
+                        <li>Implemented Agile methodologies resulting in 30% improvement in project delivery timelines</li>
+                        <li>Developed and maintained project documentation, risk assessments, and stakeholder communications</li>
+                        <li>Coordinated with C-level executives and department heads to align project objectives with business goals</li>
+                        <li>Achieved 95% project success rate with zero budget overruns in the past three years</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="experience-item">
+                <div class="job-header">
+                    <div>
+                        <div class="job-title">Project Manager</div>
+                        <div class="company-name">Innovation Systems Inc., Cambridge, MA</div>
+                    </div>
+                    <div class="job-date">March 2018 – December 2019</div>
+                </div>
+                <div class="job-description">
+                    <ul>
+                        <li>Oversaw software development projects from initiation through deployment and maintenance</li>
+                        <li>Facilitated daily standups, sprint planning, and retrospective meetings for development teams</li>
+                        <li>Collaborated with product owners to define project scope and deliverable requirements</li>
+                        <li>Managed project budgets ranging from $500K to $1.5M and ensured cost-effective resource allocation</li>
+                        <li>Established quality assurance processes that reduced post-deployment issues by 40%</li>
+                        <li>Mentored junior project coordinators and provided training on project management best practices</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="experience-item">
+                <div class="job-header">
+                    <div>
+                        <div class="job-title">Project Coordinator</div>
+                        <div class="company-name">TechStart Consulting, Boston, MA</div>
+                    </div>
+                    <div class="job-date">June 2016 – February 2018</div>
+                </div>
+                <div class="job-description">
+                    <ul>
+                        <li>Assisted senior project managers in planning and executing client projects and deliverables</li>
+                        <li>Maintained project schedules, tracked milestones, and prepared status reports for stakeholders</li>
+                        <li>Coordinated meetings, managed project documentation, and facilitated communication between teams</li>
+                        <li>Supported business analysis activities including requirements gathering and process mapping</li>
+                        <li>Participated in client meetings and contributed to project proposals and presentations</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">Education</div>
+            
+            <div class="education-item">
+                <div class="education-header">
+                    <div>
+                        <div class="degree">Master of Business Administration (MBA)</div>
+                        <div class="school">Boston University, Questrom School of Business, Boston, MA</div>
+                    </div>
+                    <div class="job-date">2014 – 2016</div>
+                </div>
+                <div class="education-details">
+                    Concentration: Operations Management | GPA: 3.7/4.0 | Dean's List (4 semesters)
+                </div>
+            </div>
+            
+            <div class="education-item">
+                <div class="education-header">
+                    <div>
+                        <div class="degree">Bachelor of Science in Business Administration</div>
+                        <div class="school">Northeastern University, Boston, MA</div>
+                    </div>
+                    <div class="job-date">2010 – 2014</div>
+                </div>
+                <div class="education-details">
+                    Magna Cum Laude | Phi Beta Kappa Honor Society | Business Student Association President
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">Technical Skills</div>
+            <div class="skills-list">
+                <div class="skill-category">
+                    <div class="skill-category-title">Project Management:</div>
+                    <div>Agile, Scrum, Waterfall, Kanban, Risk Management, Budget Management</div>
+                </div>
+                <div class="skill-category">
+                    <div class="skill-category-title">Software:</div>
+                    <div>Microsoft Project, Jira, Confluence, Trello, Slack, Monday.com, Excel</div>
+                </div>
+                <div class="skill-category">
+                    <div class="skill-category-title">Analysis:</div>
+                    <div>Process Improvement, Data Analysis, Requirements Gathering, Quality Assurance</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">Certifications</div>
+            
+            <div class="education-item">
+                <div class="education-header">
+                    <div class="degree">Project Management Professional (PMP)</div>
+                    <div class="job-date">2021</div>
+                </div>
+            </div>
+            
+            <div class="education-item">
+                <div class="education-header">
+                    <div class="degree">Certified Scrum Master (CSM)</div>
+                    <div class="job-date">2020</div>
+                </div>
+            </div>
+            
+            <div class="education-item">
+                <div class="education-header">
+                    <div class="degree">Six Sigma Green Belt</div>
+                    <div class="job-date">2019</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Commented out download functionality -->
+    <!--
+    <script>
+        function downloadAsWord() {
+            // Download functionality commented out for future use
+        }
+    </script>
+    -->
+</body>
+</html>
