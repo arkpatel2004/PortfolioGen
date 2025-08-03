@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>6-Month Project Timeline</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+            color: #2d3748;
+            line-height: 1.4;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a202c;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            color: #718096;
+        }
+
+        .gantt-container {
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .gantt-wrapper {
+            overflow-x: auto;
+        }
+
+        .gantt-chart {
+            min-width: 1600px;
+            border-collapse: collapse;
+        }
+
+        /* Header Styles */
+        .gantt-header {
+            display: grid;
+            grid-template-columns: 320px repeat(24, 50px);
+            background: #ff8585;
+            color: #1a202c;
+            font-weight: 600;
+            font-size: 11px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .gantt-header div {
+            padding: 10px 4px;
+            text-align: center;
+            border-right: 1px solid #e2e8f0;
+        }
+
+        .gantt-header div:first-child {
+            text-align: left;
+            padding-left: 16px;
+            background: #ff8585;
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        /* Month headers styling */
+        .month-header {
+            background: #fca6a6 !important;
+            font-size: 12px;
+            font-weight: 700;
+            border-right: 2px solid #ff8585 !important;
+        }
+
+        /* Row Styles */
+        .gantt-row {
+            display: grid;
+            grid-template-columns: 320px repeat(24, 50px);
+            border-bottom: 1px solid #e2e8f0;
+            min-height: 45px;
+        }
+
+        .gantt-row:nth-child(even) {
+            background: #fcfcfc;
+        }
+
+        .gantt-row:hover {
+            background: #f7fafc;
+        }
+
+        /* Task name column */
+        .task-name {
+            padding: 12px 16px;
+            border-right: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: white;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .task-assignee {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .assignee-you {
+            background: rgb(192, 192, 255);
+            color: white;
+        }
+
+        .assignee-ark {
+            background: lightskyblue;
+            color: white;
+        }
+
+        .assignee-both {
+            background: pink;
+            color: white;
+        }
+
+        /* Week cells */
+        .gantt-cell {
+            border-right: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            padding: 3px;
+            min-height: 45px;
+        }
+
+        /* Task bars */
+        .task-bar {
+            height: 26px;
+            border-radius: 4px;
+            width: 100%;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            font-weight: 600;
+            color: white;
+            text-align: center;
+        }
+
+        .task-bar:hover {
+            opacity: 0.8;
+        }
+
+        .bar-you {
+            background: rgb(192, 192, 255);
+        }
+
+        .bar-ark {
+            background: lightskyblue;
+        }
+
+        .bar-both {
+            background: pink;
+        }
+
+        /* Phase dividers */
+        .phase-divider {
+            grid-column: 1 / -1;
+            background: #ff8585;
+            color: white;
+            padding: 8px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 20px 0;
+            padding: 15px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: #2d3748;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 10px;
+            }
+            
+            .header h1 {
+                font-size: 20px;
+            }
+            
+            .legend {
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>6-Month Project Timeline</h1>
+            <p>Technology Development Schedule</p>
+        </div>
+
+        <div class="gantt-container">
+            <div class="gantt-wrapper">
+                <div class="gantt-chart">
+                    <!-- Header -->
+                    <div class="gantt-header">
+                        <div>PROCESS</div>
+                        <div class="month-header">M1</div>
+                        <div>W2</div>
+                        <div>W3</div>
+                        <div>W4</div>
+                        <div class="month-header">M2</div>
+                        <div>W6</div>
+                        <div>W7</div>
+                        <div>W8</div>
+                        <div class="month-header">M3</div>
+                        <div>W10</div>
+                        <div>W11</div>
+                        <div>W12</div>
+                        <div class="month-header">M4</div>
+                        <div>W14</div>
+                        <div>W15</div>
+                        <div>W16</div>
+                        <div class="month-header">M5</div>
+                        <div>W18</div>
+                        <div>W19</div>
+                        <div>W20</div>
+                        <div class="month-header">M6</div>
+                        <div>W22</div>
+                        <div>W23</div>
+                        <div>W24</div>
+                    </div>
+
+                    <!-- Phase 1: Planning & Architecture -->
+                    <div class="phase-divider">Phase 1: Planning & Architecture</div>
+
+                    <!-- Project Planning & Requirements -->
+                    <div class="gantt-row">
+                        <div class="task-name">
+                            <span>Project Planning & Requirements</span>
+                            <span class="task-assignee assignee-both">Both</span>
+                        </div>
+                        <div class="gantt-cell"><div class="task-bar bar-both" data-tooltip="Define scope, requirements, and objectives"></div></div>
+                        <div class="gantt-cell"><div class="task-bar bar-both" data-tooltip="Finalize functional requirements"></div></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                    </div>
+
+                    <!-- System Architecture & Setup -->
+                    <div class="gantt-row">
+                        <div class="task-name">
+                            <span>System Architecture & Setup</span>
+                            <span class="task-assignee assignee-both">Both</span>
+                        </div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"><div class="task-bar bar-both" data-tooltip="Design system architecture and database schema"></div></div>
+                        <div class="gantt-cell"><div class="task-bar bar-both" data-tooltip="Setup development environment and CI/CD"></div></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                    </div>
+
+                    <!-- Phase 2: Frontend Development -->
+                    <div class="phase-divider">Phase 2: Frontend Development</div>
+
+                    <!-- Upload Interface & Forms -->
+                    <div class="gantt-row">
+                        <div class="task-name">
+                            <span>Upload Interface & Forms</span>
+                            <span class="task-assignee assignee-you">Niyati</span>
+                        </div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"><div class="task-bar bar-you" data-tooltip="File upload interface and form validation"></div></div>
+                        <div class="gantt-cell"><div class="task-bar bar-you" data-tooltip="GitHub link input and data validation"></div></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                    </div>
+
+                    <!-- Professional Templates -->
+                    <div class="gantt-row">
+                        <div class="task-name">
+                            <span>Professional Templates</span>
+                            <span class="task-assignee assignee-you">Niyati</span>
+                        </div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"><div class="task-bar bar-you" data-tooltip="Design and develop 4 professional portfolio templates"></div></div>
+                        <div class="gantt-cell"><div class="task-bar bar-you" data-tooltip="Responsive design and template optimization"></div></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                    </div>
+
+                    <!-- Template Gallery & Preview -->
+                    <div class="gantt-row">
+                        <div class="task-name">
+                            <span>Template Gallery & Preview</span>
+                            <span class="task-assignee assignee-ark">Ark</span>
+                        </div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"><div class="task-bar bar-ark" data-tooltip="Template gallery with browsing and selection"></div></div>
+                        <div class="gantt-cell"><div class="task-bar bar-ark" data-tooltip="Template preview functionality"></div></div>
+                        <div class="gantt-cell"><div class="task-bar bar-ark" data-tooltip="Live preview with real-time updates"></div></div>
+                        <div class="gantt-cell"><div class="task-bar bar-ark" data-tooltip="Interactive preview controls"></div></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                    </div>
+
+                    <!-- Phase 3: Backend Development -->
+                    <div class="phase-divider">Phase 3: Backend Development</div>
+
+                    <!-- Authentication & User Management -->
+                    <div class="gantt-row">
+                        <div class="task-name">
+                            <span>Authentication & User Management</span>
+                            <span class="task-assignee assignee-you">Niyati</span>
+                        </div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"><div class="task-bar bar-you" data-tooltip="User registration, login, and profile APIs"></div></div>
+                        <div class="gantt-cell"><div class="task-bar bar-you" data-tooltip="JWT authentication and session management"></div></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                    </div>
+
+                    <!-- NLP & PDF Processing -->
+                    <div class="gantt-row">
+                        <div class="task-name">
+                            <span>NLP & PDF Processing</span>
+                            <span class="task-assignee assignee-you">Niyati</span>
+                        </div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"><div class="task-bar bar-you" data-tooltip="LinkedIn PDF parsing and data extraction"></div></div>
+                        <div class="gantt-cell"><div class="task-bar bar-you" data-tooltip="NLP refinement and data normalization"></div></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                    </div>
+
+                    <!-- Generative AI Model Development -->
+                    <div class="gantt-row">
+                        <div class="task-name">
+                            <span>Generative AI Model Development</span>
+                            <span class="task-assignee assignee-both">Both</span>
+                        </div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"><div class="task-bar bar-both" data-tooltip="Research and select AI model for content generation"></div></div>
+                        <div class="gantt-cell"><div class="task-bar bar-both" data-tooltip="Setup and configure AI model infrastructure"></div></div>
+                        <div class="gantt-cell"><div class="task-bar bar-both" data-tooltip="Develop AI prompt engineering and optimization"></div></div>
+                        <div class="gantt-cell"><div class="task-bar bar-both" data-tooltip="Fine-tune model for portfolio content generation"></div></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                    </div>
+
+                    <!-- Database & GitHub Integration -->
+                    <div class="gantt-row">
+                        <div class="task-name">
+                            <span>Database & GitHub Integration</span>
+                            <span class="task-assignee assignee-ark">Ark</span>
+                        </div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"><div class="task-bar bar-ark" data-tooltip="PostgreSQL integration and data storage"></div></div>
+                        <div class="gantt-cell"><div class="task-bar bar-ark" data-tooltip="GitHub API integration and project extraction"></div></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                    </div>
+
+                    <!-- Phase 4: Integration & Testing -->
+                    <div class="phase-divider">Phase 4: Integration & Testing</div>
+
+                    <!-- Frontend-Backend Integration -->
+                    <div class="gantt-row">
+                        <div class="task-name">
+                            <span>Frontend-Backend Integration</span>
+                            <span class="task-assignee assignee-you">Niyati</span>
+                        </div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"><div class="task-bar bar-you" data-tooltip="Connect upload interface to backend APIs"></div></div>
+                        <div class="gantt-cell"><div class="task-bar bar-you" data-tooltip="Data pipeline integration with preview system"></div></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                    </div>
+
+                    <!-- AI Services & Download System -->
+                    <div class="gantt-row">
+                        <div class="task-name">
+                            <span>AI Services & Download System</span>
+                            <span class="task-assignee assignee-ark">Ark</span>
+                        </div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"><div class="task-bar bar-ark" data-tooltip="Connect gallery and preview to AI services"></div></div>
+                        <div class="gantt-cell"><div class="task-bar bar-ark" data-tooltip="Dynamic content population system"></div></div>
+                        <div class="gantt-cell"><div class="task-bar bar-ark" data-tooltip="ZIP download functionality"></div></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                    </div>
+
+                    <!-- Testing & Quality Assurance -->
+                    <div class="gantt-row">
+                        <div class="task-name">
+                            <span>Testing & Quality Assurance</span>
+                            <span class="task-assignee assignee-both">Both</span>
+                        </div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"><div class="task-bar bar-both" data-tooltip="Unit testing and integration testing"></div></div>
+                        <div class="gantt-cell"><div class="task-bar bar-both" data-tooltip="User acceptance testing and bug fixes"></div></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                    </div>
+
+                    <!-- Deployment & Documentation -->
+                    <div class="gantt-row">
+                        <div class="task-name">
+                            <span>Deployment & Documentation</span>
+                            <span class="task-assignee assignee-both">Both</span>
+                        </div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"></div>
+                        <div class="gantt-cell"><div class="task-bar bar-both" data-tooltip="AWS deployment and infrastructure setup"></div></div>
+                        <div class="gantt-cell"><div class="task-bar bar-both" data-tooltip="Documentation, user guide, and project handover"></div></div>
+                        <div class="gantt-cell"><div class="task-bar bar-both" data-tooltip="Performance optimization and monitoring"></div></div>
+                        <div class="gantt-cell"><div class="task-bar bar-both" data-tooltip="Final testing and go-live preparation"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color bar-you"></div>
+                <span>Niyati's Tasks</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color bar-ark"></div>
+                <span>Ark's Tasks</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color bar-both"></div>
+                <span>Collaborative Tasks</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        const taskBars = document.querySelectorAll('.task-bar');
+        const tooltip = document.getElementById('tooltip');
+
+        taskBars.forEach(bar => {
+            bar.addEventListener('mouseenter', (e) => {
+                const tooltipText = e.target.getAttribute('data-tooltip');
+                if (tooltipText) {
+                    tooltip.textContent = tooltipText;
+                    tooltip.style.opacity = '1';
+                }
+            });
+
+            bar.addEventListener('mousemove', (e) => {
+                tooltip.style.left = e.pageX + 15 + 'px';
+                tooltip.style.top = e.pageY - 35 + 'px';
+            });
+
+            bar.addEventListener('mouseleave', () => {
+                tooltip.style.opacity = '0';
+            });
+        });
+    </script>
+</body>
+</html>
