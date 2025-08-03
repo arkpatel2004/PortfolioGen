@@ -10,9 +10,9 @@ const Sidebar: React.FC = () => {
 
   const navItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', exact: true },
-    { path: '/dashboard/profile', icon: User, label: 'Profile' },
     { path: '/dashboard/tokens', icon: CreditCard, label: 'Tokens' },
     { path: '/dashboard/history', icon: History, label: 'History' },
+    { path: '/dashboard/profile', icon: User, label: 'Profile' },
   ];
 
   const handleLogout = () => {
