@@ -27,54 +27,47 @@ const DashboardInputs: React.FC = () => {
   const portfolioTemplates = [
     {
       id: 1,
-      name: 'Portfolio 1',
-      image: 'https://images.pexels.com/photos/196644/pexels-photo-196644.jpeg?auto=compress&cs=tinysrgb&w=400',
-      description: 'Modern minimalist design'
+      name: 'Modern Developer ',
+      image: './image/p1.png',
     },
     {
       id: 2,
-      name: 'Portfolio 2',
-      image: 'https://images.pexels.com/photos/270348/pexels-photo-270348.jpeg?auto=compress&cs=tinysrgb&w=400',
-      description: 'Creative developer theme'
+      name: 'Animated Dark',
+      image: './image/p2.png',
     },
     {
       id: 3,
-      name: 'Portfolio 3',
-      image: 'https://images.pexels.com/photos/574071/pexels-photo-574071.jpeg?auto=compress&cs=tinysrgb&w=400',
-      description: 'Professional corporate style'
+      name: 'Gradient Dreams',
+      image: './image/p3.png',
     }
   ];
 
   const resumeTemplates = [
     {
       id: 1,
-      name: 'Resume 1',
-      image: 'https://images.pexels.com/photos/590016/pexels-photo-590016.jpg?auto=compress&cs=tinysrgb&w=400',
-      description: 'Clean professional layout'
+      name: 'Professional Gradient Corporate',
+      image: './image/r1.png',
     },
     {
       id: 2,
-      name: 'Resume 2',
-      image: 'https://images.pexels.com/photos/590020/pexels-photo-590020.jpg?auto=compress&cs=tinysrgb&w=400',
-      description: 'Modern creative design'
+      name: 'Classic Minimalist Professional',
+      image: './image/r2.png',
     },
     {
       id: 3,
-      name: 'Resume 3',
-      image: 'https://images.pexels.com/photos/590022/pexels-photo-590022.jpg?auto=compress&cs=tinysrgb&w=400',
-      description: 'Executive style template'
+      name: 'Traditional Academic Professional',
+      image: './image/r3.png',
     },
     {
       id: 4,
-      name: 'Resume 4',
-      image: 'https://images.pexels.com/photos/590018/pexels-photo-590018.jpg?auto=compress&cs=tinysrgb&w=400',
-      description: 'Minimalist approach'
+      name: 'Modern Dark Sidebar Resume',
+      image: './image/r4.png',
     },
     {
       id: 5,
-      name: 'Resume 5',
-      image: 'https://images.pexels.com/photos/590024/pexels-photo-590024.jpg?auto=compress&cs=tinysrgb&w=400',
-      description: 'Simple professional layout'
+      name: 'Simple Clean Professional',
+      image: './image/r5.png',
+
     }
   ];
 
@@ -232,7 +225,6 @@ const DashboardInputs: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="font-semibold text-gray-900">{template.name}</h4>
-                      <p className="text-sm text-gray-500">{template.description}</p>
                     </div>
                     <button
                       onClick={(e) => {
@@ -291,7 +283,6 @@ const DashboardInputs: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="font-semibold text-gray-900">{template.name}</h4>
-                      <p className="text-sm text-gray-500">{template.description}</p>
                     </div>
                     <button
                       onClick={(e) => {
