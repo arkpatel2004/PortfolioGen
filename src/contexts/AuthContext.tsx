@@ -1,4 +1,13 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { auth } from '../firebase';
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile,
+  signOut,
+  User as FirebaseUser,
+} from "firebase/auth";
 
 interface User {
   id: string;
@@ -11,8 +20,7 @@ interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
   signup: (name: string, email: string, password: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -30,43 +38,41 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+const extractUser = (user: FirebaseUser): User => ({
+  id: user.uid,
+  name: user.displayName ?? "",
+  email: user.email ?? "",
+  avatar: user.photoURL ?? "",
+});
+
 const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
 
-  const login = async (email: string, password: string) => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setUser({
-      id: '1',
-      name: 'John Doe',
-      email,
-      avatar: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=150'
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(extractUser(firebaseUser));
+      } else {
+        setUser(null);
+      }
     });
+    return unsubscribe;
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    await signInWithEmailAndPassword(auth, email, password);
   };
 
   const signup = async (name: string, email: string, password: string) => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setUser({
-      id: '1',
-      name,
-      email,
-      avatar: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=150'
-    });
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    if (userCredential?.user) {
+      await updateProfile(userCredential.user, { displayName: name });
+      setUser(extractUser(userCredential.user));
+    }
   };
 
-  const loginWithGoogle = async () => {
-    // Simulate Google OAuth
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setUser({
-      id: '1',
-      name: 'John Doe',
-      email: 'john@gmail.com',
-      avatar: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=150'
-    });
-  };
-
-  const logout = () => {
+  const logout = async () => {
+    await signOut(auth);
     setUser(null);
   };
 
@@ -74,9 +80,8 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     login,
     signup,
-    loginWithGoogle,
     logout,
-    isAuthenticated: !!user
+    isAuthenticated: !!user,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
