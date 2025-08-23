@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import os
 from datetime import datetime
@@ -9,85 +9,125 @@ import requests
 from io import BytesIO
 import PyPDF2
 
-# Config class to hold constants and keys
 class Config:
-    GEMINI_API_KEY = "AIzaSyD4FlIeXdS_kfi5W2TGLECvug69rBJ7MsM"  # Replace with your actual Gemini API key
+    GEMINI_API_KEY = "AIzaSyD4FlIeXdS_kfi5W2TGLECvug69rBJ7MsM"
     UPLOAD_FOLDER = 'storage/uploads'
     GENERATED_FOLDER = 'storage/generated'
     MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
-# Setup Flask
 app = Flask(__name__)
 CORS(app)
 
-# --- PDF Parsing Service ---
 class PDFParser:
     def extract_text_from_pdf(self, pdf_file):
-        """Extract text content from LinkedIn PDF"""
         try:
             pdf_reader = PyPDF2.PdfReader(BytesIO(pdf_file.read()))
             text = ""
-            
             for page in pdf_reader.pages:
                 page_text = page.extract_text()
                 if page_text:
                     text += page_text + "\n"
-            
-            return self._clean_linkedin_text(text)
+            print("=== Extracted LinkedIn PDF text ===")
+            print(text)  # Console log for you to observe structure and adjust if needed
+            print("=== End of LinkedIn PDF text ===")
+            return text
         except Exception as e:
             raise Exception(f"Failed to parse PDF: {e}")
-    
-    def _clean_linkedin_text(self, text):
-        """Clean and format LinkedIn extracted text"""
-        text = re.sub(r'\s+', ' ', text)
-        text = text.replace('\n', ' ').strip()
-        return text
 
-# --- GitHub Data Service ---
+    def extract_sections(self, text):
+        # Parse Experience section first
+        experiences = []
+        education = []
+        
+        # Find Experience section
+        exp_match = re.search(
+            r"Experience(.*?)(Education|Skills|$)", 
+            text, re.DOTALL | re.IGNORECASE
+        )
+        if exp_match:
+            exp_text = exp_match.group(1).strip()
+            # Split experience lines by newline
+            lines = [line.strip() for line in exp_text.split('\n') if line.strip()]
+            i = 0
+            while i + 3 < len(lines):
+                company = lines[i]
+                job_title = lines[i+1]
+                date = lines[i+2]
+                location = lines[i+3]
+
+                # Prepare experience object with keys company, jobTitle, date, location
+                experiences.append({
+                    "company": company,
+                    "jobTitle": job_title,
+                    "date": date,
+                    "location": location
+                })
+
+                i += 4  # move to next 4-line chunk
+                # Stop if next line is "Education" or "Skills"
+                if i < len(lines):
+                    next_line = lines[i]
+                    if re.match(r"Education|Skills", next_line, re.IGNORECASE):
+                        break
+
+        # Find Education section
+        edu_match = re.search(
+            r"Education(.*?)(Experience|Skills|Page|$)", 
+            text, re.DOTALL | re.IGNORECASE
+        )
+        if edu_match:
+            edu_text = edu_match.group(1).strip()
+            lines = [line.strip() for line in edu_text.split('\n') if line.strip()]
+            # Education: school then date per 2 lines, stop on line with 'Page'
+            i = 0
+            while i + 1 < len(lines):
+                school = lines[i]
+                date = lines[i+1]
+                if "Page" in school or "Page" in date:
+                    break
+                education.append({
+                    "school": school,
+                    "date": date
+                })
+                i += 2
+
+        return experiences, education
+
 class GitHubService:
     def __init__(self):
         self.base_url = "https://api.github.com"
-    
+
     def extract_username_from_url(self, github_url):
-        """Extract username from GitHub URL"""
         patterns = [
             r'github\.com/([^/]+)/?$',
             r'github\.com/([^/]+)/.*',
         ]
-        
         for pattern in patterns:
             match = re.search(pattern, github_url)
             if match:
                 return match.group(1)
-        
         raise ValueError("Invalid GitHub URL format")
-    
+
     def get_user_data(self, github_url):
-        """Fetch user profile and repositories from GitHub API"""
         try:
             username = self.extract_username_from_url(github_url)
-            
-            # Get user profile
             user_response = requests.get(f"{self.base_url}/users/{username}")
             user_response.raise_for_status()
             user_data = user_response.json()
-            
-            # Get repositories
+
             repos_response = requests.get(f"{self.base_url}/users/{username}/repos?sort=updated&per_page=10")
             repos_response.raise_for_status()
             repos_data = repos_response.json()
-            
+
             return {
                 'profile': user_data,
                 'repositories': self._process_repositories(repos_data)
             }
         except Exception as e:
             raise Exception(f"Failed to fetch GitHub data: {e}")
-    
+
     def _process_repositories(self, repos):
-        """Process and filter repositories for portfolio"""
         processed_repos = []
-        
         for repo in repos:
             if not repo.get('fork', False) and repo.get('size', 0) > 0:
                 processed_repos.append({
@@ -99,40 +139,32 @@ class GitHubService:
                     'updated_at': repo.get('updated_at'),
                     'topics': repo.get('topics', [])
                 })
-        
-        return processed_repos[:6]  # Limit to top 6 repositories
+        return processed_repos[:6]
 
-# --- Gemini AI Service ---
 class GeminiService:
-    def extract_user_data(self, linkedin_text, github_data):
-        """Extract and structure user data using AI (mocked for demo)"""
-        # NOTE: Replace this with actual Gemini API call
-        # For now, we'll create a structured response from the data we have
-        
-        # Extract basic info from GitHub profile
+    def extract_user_data(self, linkedin_text, github_data, pdf_parser: PDFParser):
+        experiences, education = pdf_parser.extract_sections(linkedin_text)
+
         profile = github_data.get('profile', {})
         repos = github_data.get('repositories', [])
-        
-        # Create structured user data
+
         user_data = {
             "name": profile.get('name') or profile.get('login', 'Unknown'),
-            "title": "Software Developer",  # You can enhance this with AI
+            "title": profile.get('bio') or "Software Developer",
             "summary": profile.get('bio') or "Passionate developer building amazing projects.",
             "contact": {
                 "email": profile.get('email', ''),
                 "location": profile.get('location', ''),
-                "linkedin": "linkedin.com/in/user",  # Extract from LinkedIn PDF with AI
+                "linkedin": "linkedin.com/in/user",  # You can enhance extraction to get real LinkedIn URL here
                 "github": profile.get('html_url', ''),
                 "website": profile.get('blog', '')
             },
-            "experience": [
-                # AI would extract this from LinkedIn PDF
+            "experience": experiences if experiences else [
                 {
-                    "jobTitle": "Software Developer",
                     "company": "Tech Company",
-                    "startDate": "Jan 2022",
-                    "endDate": "Present",
-                    "description": ["Developed web applications", "Worked with modern technologies"]
+                    "jobTitle": "Software Developer",
+                    "date": "Jan 2022 - Present",
+                    "location": ""
                 }
             ],
             "projects": [
@@ -147,13 +179,10 @@ class GeminiService:
                     ]
                 } for repo in repos
             ],
-            "education": [
-                # AI would extract this from LinkedIn PDF
+            "education": education if education else [
                 {
-                    "degree": "Bachelor's Degree in Computer Science",
                     "school": "University Name",
-                    "date": "2018-2022",
-                    "details": ""
+                    "date": "2018-2022"
                 }
             ],
             "skills": [
@@ -168,67 +197,44 @@ class GeminiService:
             ],
             "certifications": []
         }
-        
         return user_data
 
-# --- Template Service ---
 class TemplateService:
     def __init__(self):
         self.templates_dir = "templates"
         self.storage_dir = "storage/generated"
-    
+
     def generate_resume(self, user_data, template_id):
-        """Generate resume HTML with user data"""
         try:
-            # Load resume template
             template_path = os.path.join(self.templates_dir, f"resume{template_id}.html")
-            
             with open(template_path, 'r', encoding='utf-8') as file:
                 template_html = file.read()
-            
-            # Inject user data into template
             populated_html = self._inject_resume_data(template_html, user_data)
-            
-            # Save generated resume
             filename = f"resume_{uuid.uuid4().hex[:8]}.html"
             output_path = os.path.join(self.storage_dir, filename)
-            
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
             with open(output_path, 'w', encoding='utf-8') as file:
                 file.write(populated_html)
-            
             return filename
-            
         except Exception as e:
             raise Exception(f"Failed to generate resume: {e}")
-    
+
     def generate_portfolio(self, user_data, template_id):
-        """Generate portfolio HTML with user data"""
         try:
-            # Load portfolio template
             template_path = os.path.join(self.templates_dir, f"portfolio{template_id}.html")
-            
             with open(template_path, 'r', encoding='utf-8') as file:
                 template_html = file.read()
-            
-            # Inject user data into template
             populated_html = self._inject_portfolio_data(template_html, user_data)
-            
-            # Save generated portfolio
             filename = f"portfolio_{uuid.uuid4().hex[:8]}.html"
             output_path = os.path.join(self.storage_dir, filename)
-            
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
             with open(output_path, 'w', encoding='utf-8') as file:
                 file.write(populated_html)
-            
             return filename
-            
         except Exception as e:
             raise Exception(f"Failed to generate portfolio: {e}")
-    
+
     def _inject_resume_data(self, template_html, user_data):
-        """Inject user data into resume template"""
         script_injection = f"""
         <script>
         window.onload = function() {{
@@ -239,11 +245,9 @@ class TemplateService:
         }};
         </script>
         """
-        
         return template_html.replace('</body>', f'{script_injection}</body>')
-    
+
     def _inject_portfolio_data(self, template_html, user_data):
-        """Inject user data into portfolio template"""
         script_injection = f"""
         <script>
         window.onload = function() {{
@@ -254,76 +258,63 @@ class TemplateService:
         }};
         </script>
         """
-        
         return template_html.replace('</body>', f'{script_injection}</body>')
 
-# --- Initialize Services ---
-# Ensure directories exist
+
 os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(Config.GENERATED_FOLDER, exist_ok=True)
-os.makedirs('templates', exist_ok=True)
+os.makedirs("templates", exist_ok=True)
 
 pdf_parser = PDFParser()
 github_service = GitHubService()
 gemini_service = GeminiService()
 template_service = TemplateService()
 
-# --- API Routes ---
-
 @app.route('/api/generate', methods=['POST'])
 def generate_portfolio_resume():
     try:
-        # Get form data
         github_url = request.form.get('github_url')
         portfolio_template = int(request.form.get('portfolio_template'))
         resume_template = int(request.form.get('resume_template'))
-        
-        # Validate inputs
+
         if not github_url:
             return jsonify({'error': 'GitHub URL is required'}), 400
-        
-        # Get uploaded file
+
         if 'linkedin_pdf' not in request.files:
             return jsonify({'error': 'No LinkedIn PDF uploaded'}), 400
-        
+
         pdf_file = request.files['linkedin_pdf']
         if pdf_file.filename == '':
             return jsonify({'error': 'No file selected'}), 400
-        
-        # Save uploaded PDF temporarily
+
         temp_filename = f"{uuid.uuid4().hex}_{pdf_file.filename}"
         temp_path = os.path.join(Config.UPLOAD_FOLDER, temp_filename)
+        os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
         pdf_file.save(temp_path)
-        
-        # Extract PDF text
+
         with open(temp_path, 'rb') as f:
             linkedin_text = pdf_parser.extract_text_from_pdf(f)
-        
-        # Clean up temporary file
+
         os.remove(temp_path)
-        
-        # Get GitHub data
+
         github_data = github_service.get_user_data(github_url)
-        
-        # Use AI to structure the data
-        user_data = gemini_service.extract_user_data(linkedin_text, github_data)
-        
-        # Generate templates
+
+        user_data = gemini_service.extract_user_data(linkedin_text, github_data, pdf_parser)
+
         resume_filename = template_service.generate_resume(user_data, resume_template)
         portfolio_filename = template_service.generate_portfolio(user_data, portfolio_template)
-        
-        # Save user data for reference
+
         user_id = str(uuid.uuid4())
         data_path = os.path.join(Config.GENERATED_FOLDER, f"user_data_{user_id}.json")
-        
-        with open(data_path, 'w') as f:
+        os.makedirs(Config.GENERATED_FOLDER, exist_ok=True)
+        with open(data_path, 'w', encoding='utf-8') as f:
             json.dump({
                 'user_data': user_data,
                 'resume_file': resume_filename,
                 'portfolio_file': portfolio_filename,
                 'generated_at': datetime.now().isoformat()
             }, f, indent=2)
-        
+
         return jsonify({
             'success': True,
             'user_id': user_id,
@@ -332,7 +323,7 @@ def generate_portfolio_resume():
             'preview_resume_url': f'/api/preview/resume/{resume_filename}',
             'preview_portfolio_url': f'/api/preview/portfolio/{portfolio_filename}'
         })
-        
+
     except Exception as e:
         print(f"Error in generate_portfolio_resume: {e}")
         return jsonify({'error': str(e)}), 500
