@@ -1,0 +1,119 @@
+{
+  "user_data": {
+    "name": "NiyatiPatel229",
+    "title": "Software Developer",
+    "summary": "Passionate developer building amazing projects.",
+    "contact": {
+      "email": null,
+      "location": null,
+      "linkedin": "linkedin.com/in/user",
+      "github": "https://github.com/NiyatiPatel229",
+      "website": ""
+    },
+    "experience": [
+      {
+        "jobTitle": "Software Developer",
+        "company": "Tech Company",
+        "startDate": "Jan 2022",
+        "endDate": "Present",
+        "description": [
+          "Developed web applications",
+          "Worked with modern technologies"
+        ]
+      }
+    ],
+    "projects": [
+      {
+        "title": "Multiple Disease Prediction System",
+        "technologies": "Jupyter Notebook",
+        "date": "2025-02-27",
+        "summary": "GitHub project: Multiple-Disease-Prediction-System",
+        "description": [
+          "Repository with 0 stars",
+          "Built using Jupyter Notebook"
+        ]
+      },
+      {
+        "title": "Vagmine",
+        "technologies": "Dart",
+        "date": "2025-02-15",
+        "summary": "GitHub project: Vagmine",
+        "description": [
+          "Repository with 0 stars",
+          "Built using Dart"
+        ]
+      },
+      {
+        "title": "Smartrouteoptimizer",
+        "technologies": "Python",
+        "date": "2025-02-05",
+        "summary": "GitHub project: SmartRouteOptimizer",
+        "description": [
+          "Repository with 1 stars",
+          "Built using Python"
+        ]
+      },
+      {
+        "title": "Automated Multibot Navigation System",
+        "technologies": "Jupyter Notebook",
+        "date": "2024-12-28",
+        "summary": "2nd RunnerUp in DoesHack'24 ",
+        "description": [
+          "Repository with 0 stars",
+          "Built using Jupyter Notebook"
+        ]
+      },
+      {
+        "title": "Textclassification_Neuralnetwork",
+        "technologies": "Jupyter Notebook",
+        "date": "2024-10-28",
+        "summary": "GitHub project: TextClassification_NeuralNetwork",
+        "description": [
+          "Repository with 0 stars",
+          "Built using Jupyter Notebook"
+        ]
+      },
+      {
+        "title": "Facedetection",
+        "technologies": "Jupyter Notebook",
+        "date": "2024-10-25",
+        "summary": "GitHub project: FaceDetection",
+        "description": [
+          "Repository with 0 stars",
+          "Built using Jupyter Notebook"
+        ]
+      }
+    ],
+    "education": [
+      {
+        "degree": "Bachelor's Degree in Computer Science",
+        "school": "University Name",
+        "date": "2018-2022",
+        "details": ""
+      }
+    ],
+    "skills": [
+      {
+        "category": "Programming Languages",
+        "items": [
+          "Dart",
+          "Python",
+          "Jupyter Notebook"
+        ]
+      },
+      {
+        "category": "Technologies",
+        "items": [
+          "React",
+          "Node.js",
+          "Python",
+          "JavaScript"
+        ]
+      }
+    ],
+    "certifications": []
+  },
+  "resume_file": "resume_93c3242b.html",
+  "portfolio_file": "portfolio_ed26d1c8.html",
+  "generated_at": "2025-08-23T09:52:53.370760"
+}

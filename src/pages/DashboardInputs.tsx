@@ -1,5 +1,15 @@
 import React, { useState } from 'react';
-import { Github, Linkedin, Upload, ExternalLink, Sparkles, FileText, Globe, Eye } from 'lucide-react';
+import { Github, Linkedin, Upload, ExternalLink, Sparkles, FileText, Globe, Eye, Download, CheckCircle } from 'lucide-react';
+
+interface GenerateResponse {
+  success: boolean;
+  user_id: string;
+  resume_url: string;
+  portfolio_url: string;
+  preview_resume_url: string;
+  preview_portfolio_url: string;
+  error?: string;
+}
 
 const DashboardInputs: React.FC = () => {
   const [githubUrl, setGithubUrl] = useState('');
@@ -7,27 +17,65 @@ const DashboardInputs: React.FC = () => {
   const [selectedPortfolioTemplate, setSelectedPortfolioTemplate] = useState<number | null>(null);
   const [selectedResumeTemplate, setSelectedResumeTemplate] = useState<number | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [generationResult, setGenerationResult] = useState<GenerateResponse | null>(null);
+  const [error, setError] = useState<string>('');
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type === 'application/pdf') {
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        setError('File size must be less than 10MB');
+        return;
+      }
       setLinkedinFile(file);
+      setError('');
+    } else {
+      setError('Please upload a valid PDF file');
     }
   };
 
   const handleGenerate = async () => {
-    if (!githubUrl || !linkedinFile || !selectedPortfolioTemplate || !selectedResumeTemplate) return;
+    if (!githubUrl || !linkedinFile || !selectedPortfolioTemplate || !selectedResumeTemplate) {
+      setError('Please fill in all required fields');
+      return;
+    }
     
     setIsProcessing(true);
-    // Simulate processing
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    setIsProcessing(false);
+    setError('');
+    setGenerationResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('github_url', githubUrl);
+      formData.append('linkedin_pdf', linkedinFile);
+      formData.append('portfolio_template', selectedPortfolioTemplate.toString());
+      formData.append('resume_template', selectedResumeTemplate.toString());
+
+      const response = await fetch('http://localhost:5000/api/generate', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setGenerationResult(result);
+        setError('');
+      } else {
+        throw new Error(result.error || 'Generation failed');
+      }
+    } catch (error) {
+      console.error('Generation error:', error);
+      setError(error instanceof Error ? error.message : 'Generation failed. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const portfolioTemplates = [
     {
       id: 1,
-      name: 'Modern Developer ',
+      name: 'Modern Developer',
       image: './image/p1.png',
     },
     {
@@ -67,20 +115,16 @@ const DashboardInputs: React.FC = () => {
       id: 5,
       name: 'Simple Clean Professional',
       image: './image/r5.png',
-
     }
   ];
 
   const handlePreviewPortfolio = (templateId: number) => {
-    // Fetch the HTML content and open in new tab using Blob
-    fetch(`/templates/portfolio${templateId}.html`)
+    fetch(`http://localhost:5000/templates/portfolio${templateId}.html`)
       .then(response => response.text())
       .then(htmlContent => {
         const blob = new Blob([htmlContent], { type: 'text/html' });
         const url = URL.createObjectURL(blob);
         window.open(url, '_blank');
-        
-        // Clean up the object URL after a short delay
         setTimeout(() => URL.revokeObjectURL(url), 1000);
       })
       .catch(error => {
@@ -90,21 +134,31 @@ const DashboardInputs: React.FC = () => {
   };
 
   const handlePreviewResume = (templateId: number) => {
-    // Fetch the HTML content and open in new tab using Blob
-    fetch(`/templates/resume${templateId}.html`)
+    fetch(`http://localhost:5000/templates/resume${templateId}.html`)
       .then(response => response.text())
       .then(htmlContent => {
         const blob = new Blob([htmlContent], { type: 'text/html' });
         const url = URL.createObjectURL(blob);
         window.open(url, '_blank');
-        
-        // Clean up the object URL after a short delay
         setTimeout(() => URL.revokeObjectURL(url), 1000);
       })
       .catch(error => {
         console.error('Error loading resume template:', error);
         alert('Error loading resume template. Please try again.');
       });
+  };
+
+  const openPreview = (url: string) => {
+    window.open(`http://localhost:5000${url}`, '_blank');
+  };
+
+  const downloadFile = (url: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = `http://localhost:5000${url}`;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -116,6 +170,76 @@ const DashboardInputs: React.FC = () => {
           Upload your data to instantly create a professional portfolio and resume
         </p>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+          <div className="flex items-center">
+            <div className="w-5 h-5 text-red-500 mr-3">⚠️</div>
+            <p className="text-red-800">{error}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Success Message with Results */}
+      {generationResult && (
+        <div className="bg-green-50 border border-green-200 rounded-xl p-6">
+          <div className="flex items-center mb-4">
+            <CheckCircle className="w-6 h-6 text-green-600 mr-3" />
+            <h3 className="text-lg font-semibold text-green-800">Generation Successful!</h3>
+          </div>
+          
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Portfolio Results */}
+            <div className="bg-white rounded-lg p-4 border border-green-200">
+              <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                <Globe className="w-5 h-5 mr-2 text-purple-600" />
+                Portfolio
+              </h4>
+              <div className="space-y-2">
+                <button
+                  onClick={() => openPreview(generationResult.preview_portfolio_url)}
+                  className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Eye className="w-4 h-4" />
+                  <span>Preview Portfolio</span>
+                </button>
+                <button
+                  onClick={() => downloadFile(generationResult.portfolio_url, 'portfolio.html')}
+                  className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download Portfolio</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Resume Results */}
+            <div className="bg-white rounded-lg p-4 border border-green-200">
+              <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                <FileText className="w-5 h-5 mr-2 text-green-600" />
+                Resume
+              </h4>
+              <div className="space-y-2">
+                <button
+                  onClick={() => openPreview(generationResult.preview_resume_url)}
+                  className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Eye className="w-4 h-4" />
+                  <span>Preview Resume</span>
+                </button>
+                <button
+                  onClick={() => downloadFile(generationResult.resume_url, 'resume.html')}
+                  className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download Resume</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-8">
         {/* GitHub URL Input */}
@@ -282,7 +406,7 @@ const DashboardInputs: React.FC = () => {
                 <div className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-semibold text-gray-900">{template.name}</h4>
+                      <h4 className="font-semibold text-gray-900 text-sm">{template.name}</h4>
                     </div>
                     <button
                       onClick={(e) => {

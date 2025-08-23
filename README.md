@@ -31,11 +31,11 @@ The system uses Natural Language Processing (NLP) to extract key information and
 
 ## ⏰ Project Timeline (Gantt Chart)
 
-![1754198270049](image/README/1754198270049.png)
+![1755928531958](image/README/1755928531958.png)
 
 This project is developed by:
 
-* **Niyati Patel** 
+* **Niyati Patel**
 * **Ark Patel**
 
 ## 📄 License
