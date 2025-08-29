@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Github, Linkedin, Upload, ExternalLink, Sparkles, FileText, Globe, Eye, Download, CheckCircle } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { userService } from '../services/userService';
 
 interface GenerateResponse {
   success: boolean;
@@ -12,6 +14,7 @@ interface GenerateResponse {
 }
 
 const DashboardInputs: React.FC = () => {
+  const { user } = useAuth();
   const [githubUrl, setGithubUrl] = useState('');
   const [linkedinFile, setLinkedinFile] = useState<File | null>(null);
   const [selectedPortfolioTemplate, setSelectedPortfolioTemplate] = useState<number | null>(null);
@@ -19,6 +22,25 @@ const DashboardInputs: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [generationResult, setGenerationResult] = useState<GenerateResponse | null>(null);
   const [error, setError] = useState<string>('');
+  const [userTokens, setUserTokens] = useState<number>(0);
+
+  // Load user tokens on component mount
+  React.useEffect(() => {
+    const loadUserTokens = async () => {
+      if (user?.id) {
+        try {
+          // First ensure user profile exists with tokens
+          await userService.initializeUserProfile(user.id, user.name, user.email);
+          const profile = await userService.getUserProfile(user.id);
+          setUserTokens(profile?.tokens || 0);
+        } catch (error) {
+          console.error('Error loading user tokens:', error);
+        }
+      }
+    };
+
+    loadUserTokens();
+  }, [user?.id]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -35,8 +57,20 @@ const DashboardInputs: React.FC = () => {
   };
 
   const handleGenerate = async () => {
+    if (!user?.id) {
+      setError('User not authenticated');
+      return;
+    }
+
     if (!githubUrl || !linkedinFile || !selectedPortfolioTemplate || !selectedResumeTemplate) {
       setError('Please fill in all required fields');
+      return;
+    }
+    
+    // Check if user has enough tokens (5 for portfolio + 3 for resume = 8 total)
+    const requiredTokens = 8;
+    if (userTokens < requiredTokens) {
+      setError(`Insufficient tokens. You need ${requiredTokens} tokens but only have ${userTokens}.`);
       return;
     }
     
@@ -45,6 +79,33 @@ const DashboardInputs: React.FC = () => {
     setGenerationResult(null);
 
     try {
+      // Create generation records in database
+      const portfolioName = `Portfolio ${new Date().toLocaleDateString()}`;
+      const resumeName = `Resume ${new Date().toLocaleDateString()}`;
+      
+      const [portfolioId, resumeId] = await Promise.all([
+        userService.addGenerationItem({
+          userId: user.id,
+          name: portfolioName,
+          type: 'portfolio',
+          status: 'processing',
+          githubUrl,
+          linkedinData: linkedinFile.name,
+          tokens: 5,
+          templateId: selectedPortfolioTemplate
+        }),
+        userService.addGenerationItem({
+          userId: user.id,
+          name: resumeName,
+          type: 'resume',
+          status: 'processing',
+          githubUrl,
+          linkedinData: linkedinFile.name,
+          tokens: 3,
+          templateId: selectedResumeTemplate
+        })
+      ]);
+
       const formData = new FormData();
       formData.append('github_url', githubUrl);
       formData.append('linkedin_pdf', linkedinFile);
@@ -59,9 +120,30 @@ const DashboardInputs: React.FC = () => {
       const result = await response.json();
 
       if (result.success) {
+        // Update generation records with completed status and URLs
+        await Promise.all([
+          userService.updateGenerationStatus(portfolioId, 'completed', {
+            previewUrl: result.preview_portfolio_url,
+            downloadUrl: result.portfolio_url
+          }),
+          userService.updateGenerationStatus(resumeId, 'completed', {
+            previewUrl: result.preview_resume_url,
+            downloadUrl: result.resume_url
+          })
+        ]);
+
+        // Update local user tokens
+        const updatedProfile = await userService.getUserProfile(user.id);
+        setUserTokens(updatedProfile?.tokens || 0);
+
         setGenerationResult(result);
         setError('');
       } else {
+        // Mark generations as failed
+        await Promise.all([
+          userService.updateGenerationStatus(portfolioId, 'failed'),
+          userService.updateGenerationStatus(resumeId, 'failed')
+        ]);
         throw new Error(result.error || 'Generation failed');
       }
     } catch (error) {
@@ -432,9 +514,22 @@ const DashboardInputs: React.FC = () => {
         </div>
 
         {/* Generate Button */}
+        {/* Token Check Warning */}
+        {userTokens < 8 && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+            <div className="flex items-center">
+              <div className="w-5 h-5 text-yellow-500 mr-3">⚠️</div>
+              <p className="text-yellow-800">
+                You need 8 tokens to generate both portfolio and resume (5 + 3). You currently have {userTokens} tokens.
+                <a href="/dashboard/tokens" className="text-yellow-600 underline ml-1">Get more tokens</a>
+              </p>
+            </div>
+          </div>
+        )}
+
         <button
           onClick={handleGenerate}
-          disabled={!githubUrl || !linkedinFile || !selectedPortfolioTemplate || !selectedResumeTemplate || isProcessing}
+          disabled={!githubUrl || !linkedinFile || !selectedPortfolioTemplate || !selectedResumeTemplate || isProcessing || userTokens < 8}
           className="w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
         >
           {isProcessing ? (
@@ -445,7 +540,7 @@ const DashboardInputs: React.FC = () => {
           ) : (
             <>
               <Sparkles className="w-5 h-5" />
-              <span>Generate Portfolio & Resume</span>
+              <span>Generate Portfolio & Resume (8 tokens)</span>
             </>
           )}
         </button>

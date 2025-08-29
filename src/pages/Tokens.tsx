@@ -1,17 +1,70 @@
-import React, { useState } from 'react';
-import { Zap, Play, Clock, Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Zap, Play, Check } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { userService, UserProfile } from '../services/userService';
 
 const Tokens: React.FC = () => {
+  const { user } = useAuth();
   const [isWatchingAd, setIsWatchingAd] = useState(false);
-  const currentTokens = 45;
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      if (user?.id) {
+        try {
+          // Ensure user profile exists with tokens
+          await userService.initializeUserProfile(user.id, user.name, user.email);
+          const profile = await userService.getUserProfile(user.id);
+          setUserProfile(profile);
+        } catch (error) {
+          console.error('Error loading user profile:', error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadUserProfile();
+  }, [user?.id]);
 
   const handleWatchAd = async () => {
+    if (!user?.id) return;
+    
     setIsWatchingAd(true);
-    // Simulate watching ad
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    setIsWatchingAd(false);
-    // Here you would add the token to user's balance
+    
+    try {
+      // Simulate watching ad
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      // Add 1 token to user's balance
+      await userService.addTokens(user.id, 1);
+      
+      // Refresh user profile
+      const updatedProfile = await userService.getUserProfile(user.id);
+      setUserProfile(updatedProfile);
+      
+    } catch (error) {
+      console.error('Error adding tokens:', error);
+    } finally {
+      setIsWatchingAd(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto space-y-8">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white">
+          <div className="animate-pulse">
+            <div className="h-8 bg-white bg-opacity-20 rounded mb-4"></div>
+            <div className="h-4 bg-white bg-opacity-20 rounded"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const currentTokens = userProfile?.tokens || 20;
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">

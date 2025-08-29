@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { auth } from '../firebase';
+import { userService } from '../services/userService';
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -67,7 +68,12 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     if (userCredential?.user) {
       await updateProfile(userCredential.user, { displayName: name });
-      setUser(extractUser(userCredential.user));
+      // Initialize user profile in Firestore
+      await userService.initializeUserProfile(userCredential.user.uid, name, email);
+      // Wait a moment for the profile to be created, then refresh the user state
+      setTimeout(() => {
+        setUser(extractUser(userCredential.user));
+      }, 100);
     }
   };
 

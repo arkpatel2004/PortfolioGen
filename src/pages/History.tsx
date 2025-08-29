@@ -1,72 +1,56 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Globe, FileText, Download, ExternalLink, Calendar, Filter, Search, MoreVertical, Trash2, Eye } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { userService, GenerationItem, UserStats } from '../services/userService';
 
 const History: React.FC = () => {
+  const { user } = useAuth();
   const [filterType, setFilterType] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [historyItems, setHistoryItems] = useState<GenerationItem[]>([]);
+  const [userStats, setUserStats] = useState<UserStats>({
+    totalGenerations: 0,
+    portfolios: 0,
+    resumes: 0,
+    successRate: 0
+  });
+  const [loading, setLoading] = useState(true);
 
-  const historyItems = [
-    {
-      id: 1,
-      name: 'Portfolio v3.2',
-      type: 'portfolio',
-      status: 'completed',
-      createdAt: '2 hours ago',
-      githubUrl: 'https://github.com/johndoe',
-      linkedinData: 'LinkedIn_Export_Dec2024.pdf',
-      previewUrl: 'https://johndoe-portfolio-v32.netlify.app',
-      downloadUrl: '#',
-      tokens: 5
-    },
-    {
-      id: 2,
-      name: 'Resume December 2024',
-      type: 'resume',
-      status: 'completed',
-      createdAt: '1 day ago',
-      githubUrl: 'https://github.com/johndoe',
-      linkedinData: 'LinkedIn_Export_Dec2024.pdf',
-      previewUrl: '#',
-      downloadUrl: '#',
-      tokens: 3
-    },
-    {
-      id: 3,
-      name: 'Portfolio v3.1',
-      type: 'portfolio',
-      status: 'processing',
-      createdAt: '2 days ago',
-      githubUrl: 'https://github.com/johndoe',
-      linkedinData: 'LinkedIn_Export_Nov2024.pdf',
-      previewUrl: null,
-      downloadUrl: null,
-      tokens: 5
-    },
-    {
-      id: 4,
-      name: 'Resume November 2024',
-      type: 'resume',
-      status: 'completed',
-      createdAt: '1 week ago',
-      githubUrl: 'https://github.com/johndoe',
-      linkedinData: 'LinkedIn_Export_Nov2024.pdf',
-      previewUrl: '#',
-      downloadUrl: '#',
-      tokens: 3
-    },
-    {
-      id: 5,
-      name: 'Portfolio v3.0',
-      type: 'portfolio',
-      status: 'failed',
-      createdAt: '2 weeks ago',
-      githubUrl: 'https://github.com/johndoe',
-      linkedinData: 'LinkedIn_Export_Oct2024.pdf',
-      previewUrl: null,
-      downloadUrl: null,
-      tokens: 0
-    }
-  ];
+  useEffect(() => {
+    const loadUserData = async () => {
+      if (user?.id) {
+        try {
+          const [generations, stats] = await Promise.all([
+            userService.getUserGenerations(user.id),
+            userService.getUserStats(user.id)
+          ]);
+          
+          setHistoryItems(generations);
+          setUserStats(stats);
+        } catch (error) {
+          console.error('Error loading user data:', error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadUserData();
+  }, [user?.id]);
+
+  const formatTimeAgo = (date: Date): string => {
+    const now = new Date();
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInHours / 24);
+    const diffInWeeks = Math.floor(diffInDays / 7);
+
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+    if (diffInDays < 7) return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+    if (diffInWeeks < 4) return `${diffInWeeks} week${diffInWeeks > 1 ? 's' : ''} ago`;
+    return date.toLocaleDateString();
+  };
 
   const filteredItems = historyItems.filter(item => {
     const matchesType = filterType === 'all' || item.type === filterType;
@@ -94,6 +78,20 @@ const History: React.FC = () => {
       <FileText className="w-5 h-5 text-purple-600" />
     );
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-8">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded mb-4"></div>
+          <div className="h-4 bg-gray-200 rounded mb-8"></div>
+          <div className="bg-white rounded-2xl p-6 border border-gray-200">
+            <div className="h-64 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -174,7 +172,7 @@ const History: React.FC = () => {
                   <td className="py-4 px-6">
                     <div className="flex items-center space-x-2 text-gray-500">
                       <Calendar className="w-4 h-4" />
-                      <span className="text-sm">{item.createdAt}</span>
+                      <span className="text-sm">{formatTimeAgo(item.createdAt)}</span>
                     </div>
                   </td>
                   <td className="py-4 px-6">
@@ -221,7 +219,10 @@ const History: React.FC = () => {
             <p className="text-gray-500 mb-6">
               {searchTerm ? 'Try adjusting your search terms' : 'Start by creating your first portfolio or resume'}
             </p>
-            <button className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors">
+            <button 
+              onClick={() => window.location.href = '/dashboard'}
+              className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+            >
               Create New Generation
             </button>
           </div>
@@ -237,7 +238,7 @@ const History: React.FC = () => {
               <FileText className="w-5 h-5 text-blue-600" />
             </div>
           </div>
-          <p className="text-3xl font-bold text-blue-600">28</p>
+          <p className="text-3xl font-bold text-blue-600">{userStats.totalGenerations}</p>
           <p className="text-sm text-gray-500 mt-1">All time</p>
         </div>
 
@@ -248,7 +249,7 @@ const History: React.FC = () => {
               <Globe className="w-5 h-5 text-purple-600" />
             </div>
           </div>
-          <p className="text-3xl font-bold text-purple-600">18</p>
+          <p className="text-3xl font-bold text-purple-600">{userStats.portfolios}</p>
           <p className="text-sm text-gray-500 mt-1">Websites created</p>
         </div>
 
@@ -259,7 +260,7 @@ const History: React.FC = () => {
               <FileText className="w-5 h-5 text-green-600" />
             </div>
           </div>
-          <p className="text-3xl font-bold text-green-600">10</p>
+          <p className="text-3xl font-bold text-green-600">{userStats.resumes}</p>
           <p className="text-sm text-gray-500 mt-1">PDFs generated</p>
         </div>
 
@@ -270,7 +271,7 @@ const History: React.FC = () => {
               <span className="text-yellow-600 font-bold">%</span>
             </div>
           </div>
-          <p className="text-3xl font-bold text-yellow-600">96%</p>
+          <p className="text-3xl font-bold text-yellow-600">{userStats.successRate}%</p>
           <p className="text-sm text-gray-500 mt-1">Successful generations</p>
         </div>
       </div>
