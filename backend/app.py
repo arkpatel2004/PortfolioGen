@@ -11,6 +11,7 @@ import PyPDF2
 import google.generativeai as genai
 import base64
 
+
 # --- Configuration ---
 class Config:
     # IMPORTANT: Replace with your actual Gemini API Key
@@ -19,10 +20,13 @@ class Config:
     GENERATED_FOLDER = 'storage/generated'
     MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
+
 app = Flask(__name__)
 CORS(app)
 
+
 # --- Service Classes ---
+
 
 class PDFParser:
     def extract_text_from_pdf(self, pdf_file):
@@ -38,6 +42,7 @@ class PDFParser:
             return text
         except Exception as e:
             raise Exception(f"Failed to parse PDF: {e}")
+
 
     def extract_sections(self, text):
         experiences, education = [], []
@@ -63,15 +68,18 @@ class PDFParser:
                 i += 2
         return experiences, education
 
+
 class GitHubService:
     def __init__(self):
         self.base_url = "https://api.github.com"
+
 
     def extract_username_from_url(self, github_url):
         match = re.search(r'github\.com/([^/]+)', github_url)
         if match:
             return match.group(1)
         raise ValueError("Invalid GitHub URL format")
+
 
     def get_readme_content(self, owner, repo_name):
         try:
@@ -91,6 +99,7 @@ class GitHubService:
             print(f"An error occurred fetching README for {owner}/{repo_name}: {e}")
             return None
 
+
     def get_user_data(self, github_url):
         try:
             username = self.extract_username_from_url(github_url)
@@ -98,9 +107,11 @@ class GitHubService:
             user_response.raise_for_status()
             user_data = user_response.json()
 
+
             repos_response = requests.get(f"{self.base_url}/users/{username}/repos?sort=updated&per_page=10")
             repos_response.raise_for_status()
             repos_data = repos_response.json()
+
 
             return {
                 'profile': user_data,
@@ -109,10 +120,12 @@ class GitHubService:
         except Exception as e:
             raise Exception(f"Failed to fetch GitHub data: {e}")
 
+
     def _process_repositories(self, repos, owner_profile):
         processed_repos = []
         owner_login = owner_profile.get('login')
         if not owner_login: return []
+
 
         for repo in repos:
             if not repo.get('fork', False) and repo.get('size', 0) > 0:
@@ -126,6 +139,7 @@ class GitHubService:
                 })
         return processed_repos[:6]
 
+
 class GeminiService:
     def __init__(self, api_key):
         try:
@@ -135,6 +149,7 @@ class GeminiService:
         except Exception as e:
             print(f"Error initializing Gemini Service: {e}")
             self.model = None
+
 
     def generate_resume_summary(self, resume_text: str) -> str:
         if not self.model: return "Error: Gemini model not initialized."
@@ -152,15 +167,18 @@ class GeminiService:
         prompt = f"""
         Act as a professional resume writer. Analyze the provided project information below, which could be a detailed README file or a brief summary. Your goal is to extract the most important information and write a polished, professional description of 2-3 lines for a resume's "Projects" section.
 
+
         **Instructions:**
         - Synthesize the context to clearly explain the project's purpose, key features, and what it does.
         - Mention primary technologies if evident.
         - The final output **must** be a complete, well-written paragraph.
         - **Crucially, do not** use any placeholders, square brackets [], or instructional text like "insert description here". Write the final description yourself.
 
+
         **Project Information to Analyze:**
         - **Project Name:** "{project_name}"
         - **Context / README:** "{existing_info}"
+
 
         **Generated Resume Description:**
         """
@@ -172,11 +190,13 @@ class GeminiService:
             print(f"Error generating description for project {project_name}: {e}")
             return f"A project named '{project_name}' that showcases practical application of technical skills."
 
+
     def extract_user_data(self, linkedin_text, github_data, pdf_parser: PDFParser):
         generated_summary = self.generate_resume_summary(linkedin_text)
         experiences, education = pdf_parser.extract_sections(linkedin_text)
         profile = github_data.get('profile', {})
         repos = github_data.get('repositories', [])
+
 
         generated_projects = []
         for repo in repos:
@@ -190,6 +210,7 @@ class GeminiService:
                                    f"Topics: {', '.join(repo.get('topics', [])) or 'N/A'}.")
             generated_desc = self.generate_project_description(project_title, project_context)
             generated_projects.append({"title": project_title, "description": generated_desc})
+
 
         return {
             "name": profile.get('name') or profile.get('login', 'Unknown'),
@@ -212,10 +233,12 @@ class GeminiService:
             "certifications": []
         }
 
+
 class TemplateService:
     def __init__(self):
         self.templates_dir = "templates"
         self.storage_dir = Config.GENERATED_FOLDER
+
 
     def _generate_file(self, user_data, template_id, file_type):
         try:
@@ -236,22 +259,86 @@ class TemplateService:
         except Exception as e:
             raise Exception(f"Failed to generate {file_type}: {e}")
 
+
     def generate_resume(self, user_data, template_id):
         return self._generate_file(user_data, template_id, 'resume')
 
+
     def generate_portfolio(self, user_data, template_id):
         return self._generate_file(user_data, template_id, 'portfolio')
+
 
 # --- Initialization & Routes ---
 os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(Config.GENERATED_FOLDER, exist_ok=True)
 os.makedirs("templates", exist_ok=True)
 
+
 pdf_parser = PDFParser()
 github_service = GitHubService()
 gemini_service = GeminiService(api_key=Config.GEMINI_API_KEY)
 template_service = TemplateService()
 
+
+# === NEW TEMPLATE PREVIEW ROUTES ===
+@app.route('/api/templates/portfolio/<int:template_id>')
+def serve_portfolio_template(template_id):
+    """Serve portfolio template for preview"""
+    try:
+        template_filename = f'portfolio{template_id}.html'
+        template_path = os.path.join('templates', template_filename)
+        
+        print(f"Looking for portfolio template at: {template_path}")
+        
+        if os.path.exists(template_path):
+            print(f"Found portfolio template {template_id}, serving file...")
+            return send_from_directory('templates', template_filename)
+        else:
+            print(f"Portfolio template {template_id} not found at {template_path}")
+            return jsonify({'error': f'Portfolio template {template_id} not found'}), 404
+    except Exception as e:
+        print(f"Error serving portfolio template {template_id}: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/templates/resume/<int:template_id>')
+def serve_resume_template(template_id):
+    """Serve resume template for preview"""
+    try:
+        template_filename = f'resume{template_id}.html'
+        template_path = os.path.join('templates', template_filename)
+        
+        print(f"Looking for resume template at: {template_path}")
+        
+        if os.path.exists(template_path):
+            print(f"Found resume template {template_id}, serving file...")
+            return send_from_directory('templates', template_filename)
+        else:
+            print(f"Resume template {template_id} not found at {template_path}")
+            return jsonify({'error': f'Resume template {template_id} not found'}), 404
+    except Exception as e:
+        print(f"Error serving resume template {template_id}: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/templates/<filename>')
+def serve_template_files(filename):
+    """Serve template files directly (alternative route)"""
+    try:
+        template_path = os.path.join('templates', filename)
+        print(f"Direct template access requested: {template_path}")
+        
+        if os.path.exists(template_path):
+            return send_from_directory('templates', filename)
+        else:
+            print(f"Template file {filename} not found at {template_path}")
+            return jsonify({'error': f'Template file {filename} not found'}), 404
+    except Exception as e:
+        print(f"Error serving template file {filename}: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+# === EXISTING ROUTES ===
 @app.route('/api/generate', methods=['POST'])
 def generate_portfolio_resume():
     try:
@@ -263,12 +350,15 @@ def generate_portfolio_resume():
         portfolio_template = int(request.form.get('portfolio_template', 1))
         resume_template = int(request.form.get('resume_template', 1))
 
+
         linkedin_text = pdf_parser.extract_text_from_pdf(pdf_file)
         github_data = github_service.get_user_data(github_url)
         user_data = gemini_service.extract_user_data(linkedin_text, github_data, pdf_parser)
 
+
         resume_filename = template_service.generate_resume(user_data, resume_template)
         portfolio_filename = template_service.generate_portfolio(user_data, portfolio_template)
+
 
         return jsonify({
             'success': True,
@@ -281,17 +371,21 @@ def generate_portfolio_resume():
         print(f"Error in /api/generate: {e}")
         return jsonify({'error': str(e)}), 500
 
+
 @app.route('/api/download/<file_type>/<filename>')
 def download_file(file_type, filename):
     return send_from_directory(Config.GENERATED_FOLDER, filename, as_attachment=True)
+
 
 @app.route('/api/preview/<file_type>/<filename>')
 def preview_file(file_type, filename):
     return send_from_directory(Config.GENERATED_FOLDER, filename)
 
+
 @app.route('/api/health', methods=['GET'])
 def health_check():
     return jsonify({'status': 'healthy', 'timestamp': datetime.now().isoformat()})
+
 
 if __name__ == '__main__':
     # Simplified endpoints for download and preview
@@ -301,4 +395,8 @@ if __name__ == '__main__':
     app.add_url_rule('/api/preview/portfolio/<filename>', 'preview_portfolio', lambda filename: preview_file('portfolio', filename))
     
     print("Starting Portfolio Generator Backend...")
+    print("Template preview routes added:")
+    print("  - GET /api/templates/portfolio/<id>")
+    print("  - GET /api/templates/resume/<id>") 
+    print("  - GET /templates/<filename>")
     app.run(debug=True, port=5000)

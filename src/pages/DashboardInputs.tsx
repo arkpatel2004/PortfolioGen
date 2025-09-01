@@ -29,7 +29,6 @@ const DashboardInputs: React.FC = () => {
     const loadUserTokens = async () => {
       if (user?.id) {
         try {
-          // First ensure user profile exists with tokens
           await userService.initializeUserProfile(user.id, user.name, user.email);
           const profile = await userService.getUserProfile(user.id);
           setUserTokens(profile?.tokens || 0);
@@ -45,7 +44,7 @@ const DashboardInputs: React.FC = () => {
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type === 'application/pdf') {
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+      if (file.size > 10 * 1024 * 1024) {
         setError('File size must be less than 10MB');
         return;
       }
@@ -67,7 +66,6 @@ const DashboardInputs: React.FC = () => {
       return;
     }
     
-    // Check if user has enough tokens (5 for portfolio + 3 for resume = 8 total)
     const requiredTokens = 8;
     if (userTokens < requiredTokens) {
       setError(`Insufficient tokens. You need ${requiredTokens} tokens but only have ${userTokens}.`);
@@ -79,7 +77,6 @@ const DashboardInputs: React.FC = () => {
     setGenerationResult(null);
 
     try {
-      // Create generation records in database
       const portfolioName = `Portfolio ${new Date().toLocaleDateString()}`;
       const resumeName = `Resume ${new Date().toLocaleDateString()}`;
       
@@ -120,7 +117,6 @@ const DashboardInputs: React.FC = () => {
       const result = await response.json();
 
       if (result.success) {
-        // Update generation records with completed status and URLs
         await Promise.all([
           userService.updateGenerationStatus(portfolioId, 'completed', {
             previewUrl: result.preview_portfolio_url,
@@ -132,14 +128,12 @@ const DashboardInputs: React.FC = () => {
           })
         ]);
 
-        // Update local user tokens
         const updatedProfile = await userService.getUserProfile(user.id);
         setUserTokens(updatedProfile?.tokens || 0);
 
         setGenerationResult(result);
         setError('');
       } else {
-        // Mark generations as failed
         await Promise.all([
           userService.updateGenerationStatus(portfolioId, 'failed'),
           userService.updateGenerationStatus(resumeId, 'failed')
@@ -200,34 +194,67 @@ const DashboardInputs: React.FC = () => {
     }
   ];
 
-  const handlePreviewPortfolio = (templateId: number) => {
-    fetch(`http://localhost:5000/templates/portfolio${templateId}.html`)
-      .then(response => response.text())
-      .then(htmlContent => {
-        const blob = new Blob([htmlContent], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
+  // Updated preview functions with better error handling
+  const handlePreviewPortfolio = async (templateId: number) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/templates/portfolio/${templateId}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const htmlContent = await response.text();
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      
+      // Open in new tab
+      const newWindow = window.open();
+      if (newWindow) {
+        newWindow.document.open();
+        newWindow.document.write(htmlContent);
+        newWindow.document.close();
+      } else {
+        // Fallback if popup blocked
         window.open(url, '_blank');
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-      })
-      .catch(error => {
-        console.error('Error loading portfolio template:', error);
-        alert('Error loading portfolio template. Please try again.');
-      });
+      }
+      
+      // Clean up the object URL after a delay
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      console.error('Error loading portfolio template:', error);
+      setError(`Error loading portfolio template: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
-  const handlePreviewResume = (templateId: number) => {
-    fetch(`http://localhost:5000/templates/resume${templateId}.html`)
-      .then(response => response.text())
-      .then(htmlContent => {
-        const blob = new Blob([htmlContent], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
+  const handlePreviewResume = async (templateId: number) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/templates/resume/${templateId}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const htmlContent = await response.text();
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      
+      // Open in new tab
+      const newWindow = window.open();
+      if (newWindow) {
+        newWindow.document.open();
+        newWindow.document.write(htmlContent);
+        newWindow.document.close();
+      } else {
+        // Fallback if popup blocked
         window.open(url, '_blank');
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-      })
-      .catch(error => {
-        console.error('Error loading resume template:', error);
-        alert('Error loading resume template. Please try again.');
-      });
+      }
+      
+      // Clean up the object URL after a delay
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      console.error('Error loading resume template:', error);
+      setError(`Error loading resume template: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
   const openPreview = (url: string) => {
@@ -513,7 +540,6 @@ const DashboardInputs: React.FC = () => {
           </div>
         </div>
 
-        {/* Generate Button */}
         {/* Token Check Warning */}
         {userTokens < 8 && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
