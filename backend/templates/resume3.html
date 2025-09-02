@@ -457,9 +457,9 @@
             let html = '';
             
             education.forEach(edu => {
-                // Clean the date by removing "- (" and ")"
+                // Clean the date by removing bullet point "·", spaces, and parentheses
                 let cleanDate = edu.date || '';
-                cleanDate = cleanDate.replace(/- \(/g, ' ').replace(/\)/g, '');
+                cleanDate = cleanDate.replace(/^\s*·\s*\(/, '').replace(/\)$/, '').trim();
                 
                 html += `
                     <div class="education-item">

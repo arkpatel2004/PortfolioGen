@@ -389,13 +389,21 @@
             
             experiences.forEach(exp => {
                 const bullets = Array.isArray(exp.description) ? exp.description : 
-                               exp.description ? exp.description.split('\n').filter(item => item.trim()) : [];
+                            exp.description ? exp.description.split('\n').filter(item => item.trim()) : [];
+                
+                // Combine company and location with comma
+                const companyName = exp.company || '';
+                const location = exp.location || '';
+                const companyWithLocation = location ? `${companyName}, ${location}` : companyName;
+                
+                // Use the date field directly
+                const dateRange = exp.date || '';
                 
                 html += `
                     <div class="experience-item">
                         <div class="job-info">${exp.jobTitle || ''}</div>
-                        <div class="company-location">${exp.company || ''}${exp.location ? ', ' + exp.location : ''}</div>
-                        <div class="job-dates">${exp.startDate || ''} - ${exp.endDate || ''}</div>
+                        <div class="company-location">${companyWithLocation}</div>
+                        <div class="job-dates">${dateRange}</div>
                         ${bullets.length > 0 ? `
                         <div class="responsibilities">
                             <ul>
@@ -459,11 +467,15 @@
             let html = '';
             
             education.forEach(edu => {
+                // Clean the date by removing bullet point "·", spaces, and parentheses
+                let cleanDate = edu.date || '';
+                cleanDate = cleanDate.replace(/^\s*·\s*\(/, '').replace(/\)$/, '').trim();
+                
                 html += `
                     <div class="education-item">
                         <div class="degree-info">${edu.degree || ''}</div>
                         <div class="school-info">${edu.school || ''}${edu.location ? ', ' + edu.location : ''}</div>
-                        <div class="education-dates">${edu.date || ''}</div>
+                        <div class="education-dates">${cleanDate}</div>
                         ${edu.details ? `<div class="education-details">${edu.details}</div>` : ''}
                     </div>
                 `;

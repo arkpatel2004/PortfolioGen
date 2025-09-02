@@ -11,10 +11,19 @@ import PyPDF2
 import google.generativeai as genai
 import base64
 
+# Import API keys from config file
+try:
+    from config import GEMINI_API_KEY, GITHUB_TOKEN
+    print("✅ API keys loaded from config.py")
+except ImportError:
+    print("❌ config.py not found. Please create backend/config.py with your API keys")
+    GEMINI_API_KEY = ""
+    GITHUB_TOKEN = ""
+
 # --- Configuration ---
 class Config:
-    # IMPORTANT: Replace with your actual Gemini API Key
-    GEMINI_API_KEY = "AIzaSyD4FlIeXdS_kfi5W2TGLECvug69rBJ7MsM"
+    GEMINI_API_KEY = GEMINI_API_KEY
+    GITHUB_TOKEN = GITHUB_TOKEN
     UPLOAD_FOLDER = 'storage/uploads'
     GENERATED_FOLDER = 'storage/generated'
     MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
@@ -121,6 +130,11 @@ class PDFParser:
 class GitHubService:
     def __init__(self):
         self.base_url = "https://api.github.com"
+        # Set up authentication headers with GitHub token
+        self.headers = {
+            "Authorization": f"Bearer {Config.GITHUB_TOKEN}",
+            "Accept": "application/vnd.github.v3+json"
+        } if Config.GITHUB_TOKEN else {}
 
     def extract_username_from_url(self, github_url):
         match = re.search(r'github\.com/([^/]+)', github_url)
@@ -131,7 +145,7 @@ class GitHubService:
     def get_readme_content(self, owner, repo_name):
         try:
             readme_url = f"{self.base_url}/repos/{owner}/{repo_name}/readme"
-            response = requests.get(readme_url)
+            response = requests.get(readme_url, headers=self.headers)
             response.raise_for_status()
             content_encoded = response.json().get('content', '')
             if content_encoded:
@@ -151,7 +165,7 @@ class GitHubService:
             username = self.extract_username_from_url(github_url)
             print(f"🐙 Fetching GitHub data for: {username}")
             
-            user_response = requests.get(f"{self.base_url}/users/{username}")
+            user_response = requests.get(f"{self.base_url}/users/{username}", headers=self.headers)
             user_response.raise_for_status()
             user_data = user_response.json()
             
@@ -159,7 +173,7 @@ class GitHubService:
             print(f"📍 Location: {user_data.get('location', 'N/A')}")
             print(f"📧 Email: {user_data.get('email', 'N/A')}")
 
-            repos_response = requests.get(f"{self.base_url}/users/{username}/repos?sort=updated&per_page=10")
+            repos_response = requests.get(f"{self.base_url}/users/{username}/repos?sort=updated&per_page=10", headers=self.headers)
             repos_response.raise_for_status()
             repos_data = repos_response.json()
             
@@ -478,6 +492,8 @@ if __name__ == '__main__':
     print("🔍 JSON Data Logging: ENABLED")
     print("📄 PDF Text Extraction: ENABLED")
     print("🤖 Gemini AI Integration: ENABLED")
+    print(f"🔑 GitHub Token: {'✅ SET' if Config.GITHUB_TOKEN else '❌ NOT SET'}")
+    print(f"🔑 Gemini API: {'✅ SET' if Config.GEMINI_API_KEY else '❌ NOT SET'}")
     print("=" * 60)
     print("📡 Available Routes:")
     print("  - POST /api/generate")
