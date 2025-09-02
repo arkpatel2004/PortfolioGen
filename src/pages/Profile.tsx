@@ -8,27 +8,44 @@ const Profile: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadUserProfile = async () => {
-      if (user?.id) {
-        try {
-          // Ensure user profile exists with tokens
-          await userService.initializeUserProfile(user.id, user.name, user.email);
-          const profile = await userService.getUserProfile(user.id);
-          setUserProfile(profile);
-        } catch (error) {
-          console.error('Error loading user profile:', error);
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
+    // Exit if there is no user
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
 
-    loadUserProfile();
+    // Set up a real-time listener for the user's profile
+    const unsubscribe = userService.onUserProfileSnapshot(
+      user.id,
+      (profile) => {
+        if (profile) {
+          setUserProfile(profile);
+        }
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error fetching user profile:', error);
+        setLoading(false);
+      }
+    );
+
+    // Clean up the listener when the component unmounts
+    return () => unsubscribe();
   }, [user?.id]);
+
   // Get first letter of username for avatar
   const getInitial = (name: string) => {
     return name ? name.charAt(0).toUpperCase() : 'U';
   };
+
+  if (!user) {
+    // This guard clause prevents crashes during navigation
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -43,6 +60,7 @@ const Profile: React.FC = () => {
       </div>
     );
   }
+
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       {/* Profile Header */}
@@ -51,15 +69,15 @@ const Profile: React.FC = () => {
           <div className="relative">
             <div className="w-32 h-32 rounded-2xl border-4 border-gray-100 bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
               <span className="text-4xl font-bold text-white">
-                {getInitial(user?.name || '')}
+                {getInitial(user.name || '')}
               </span>
             </div>
           </div>
 
           <div className="flex-1">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{user?.name || 'User Name'}</h1>
-              <p className="text-gray-600 mb-4">{user?.email || 'user@example.com'}</p>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">{user.name || 'User Name'}</h1>
+              <p className="text-gray-600 mb-4">{user.email || 'user@example.com'}</p>
               <p className="text-gray-600">Passionate developer with 5+ years of experience in full-stack development.</p>
             </div>
           </div>
@@ -101,7 +119,7 @@ const Profile: React.FC = () => {
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium text-gray-500">Current Tokens</label>
-              <p className="text-lg font-semibold text-gray-900">{userProfile?.tokens || 0} tokens</p>
+              <p className="text-lg font-semibold text-gray-900">{userProfile?.tokens ?? 0} tokens</p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">Member Since</label>

@@ -1,14 +1,24 @@
+// src/components/History.tsx
+
 import React, { useState, useEffect } from 'react';
-import { Globe, FileText, Download, ExternalLink, Calendar, Filter, Search, MoreVertical, Trash2, Eye } from 'lucide-react';
+import { Globe, FileText, Download, ExternalLink, Calendar, Filter, Search, MoreVertical, Eye } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { userService, GenerationItem, UserStats } from '../services/userService';
+import { userService, GenerationItem, UserProfile } from '../services/userService'; // Adjust import if needed
+
+// We don't need UserStats anymore, as we'll derive it.
+interface HistoryStats {
+  totalGenerations: number;
+  portfolios: number;
+  resumes: number;
+  successRate: number;
+}
 
 const History: React.FC = () => {
   const { user } = useAuth();
   const [filterType, setFilterType] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [historyItems, setHistoryItems] = useState<GenerationItem[]>([]);
-  const [userStats, setUserStats] = useState<UserStats>({
+  const [userStats, setUserStats] = useState<HistoryStats>({
     totalGenerations: 0,
     portfolios: 0,
     resumes: 0,
@@ -16,29 +26,69 @@ const History: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
 
+  // This useEffect now sets up real-time listeners and cleans them up on unmount
   useEffect(() => {
-    const loadUserData = async () => {
-      if (user?.id) {
-        try {
-          const [generations, stats] = await Promise.all([
-            userService.getUserGenerations(user.id),
-            userService.getUserStats(user.id)
-          ]);
-          
-          setHistoryItems(generations);
-          setUserStats(stats);
-        } catch (error) {
-          console.error('Error loading user data:', error);
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
+    if (!user?.id) {
+      setLoading(false);
+      return; // Exit if there is no user
+    }
 
-    loadUserData();
-  }, [user?.id]);
+    setLoading(true);
+
+    // --- Listener 1: For the list of generation items ---
+    const unsubscribeGenerations = userService.onUserGenerationsSnapshot(
+      user.id,
+      (generations) => {
+        setHistoryItems(generations);
+
+        // Calculate success rate based on the real-time generation list
+        const completedCount = generations.filter(item => item.status === 'completed').length;
+        const successRate = generations.length > 0
+          ? Math.round((completedCount / generations.length) * 100)
+          : 0;
+        
+        // Update only the success rate part of the stats
+        setUserStats(prevStats => ({ ...prevStats, successRate }));
+        
+        if (loading) setLoading(false); // Stop loading indicator after first data fetch
+      },
+      (error) => {
+        console.error('Failed to subscribe to generations:', error);
+        setLoading(false);
+      }
+    );
+
+    // --- Listener 2: For the summary stats from the user's profile document ---
+    const unsubscribeProfile = userService.onUserProfileSnapshot(
+      user.id,
+      (profile) => {
+        if (profile) {
+          // Update the stats that come directly from the profile doc
+          setUserStats(prevStats => ({
+            ...prevStats,
+            totalGenerations: (profile.portfoliosGenerated || 0) + (profile.resumesGenerated || 0),
+            portfolios: profile.portfoliosGenerated || 0,
+            resumes: profile.resumesGenerated || 0,
+          }));
+        }
+      },
+      (error) => {
+        console.error('Failed to subscribe to user profile:', error);
+      }
+    );
+
+    // --- Cleanup Function ---
+    // This is crucial to prevent memory leaks when the user navigates away
+    return () => {
+      unsubscribeGenerations();
+      unsubscribeProfile();
+    };
+  }, [user?.id]); // Rerun effect only if the user ID changes
+
+  // ... The rest of your component remains the same ...
 
   const formatTimeAgo = (date: Date): string => {
+    if (!date) return '...';
     const now = new Date();
     const diffInMs = now.getTime() - date.getTime();
     const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
@@ -60,14 +110,10 @@ const History: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-700';
-      case 'processing':
-        return 'bg-yellow-100 text-yellow-700';
-      case 'failed':
-        return 'bg-red-100 text-red-700';
-      default:
-        return 'bg-gray-100 text-gray-700';
+      case 'completed': return 'bg-green-100 text-green-700';
+      case 'processing': return 'bg-yellow-100 text-yellow-700';
+      case 'failed': return 'bg-red-100 text-red-700';
+      default: return 'bg-gray-100 text-gray-700';
     }
   };
 
@@ -78,13 +124,15 @@ const History: React.FC = () => {
       <FileText className="w-5 h-5 text-purple-600" />
     );
   };
-
+  
+  // No changes to the JSX (return statement) are needed. It will automatically re-render
+  // with the new state from the real-time listeners.
   if (loading) {
     return (
       <div className="space-y-8">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded mb-4"></div>
-          <div className="h-4 bg-gray-200 rounded mb-8"></div>
+          <div className="h-8 bg-gray-200 rounded mb-4 w-1/3"></div>
+          <div className="h-4 bg-gray-200 rounded mb-8 w-1/2"></div>
           <div className="bg-white rounded-2xl p-6 border border-gray-200">
             <div className="h-64 bg-gray-200 rounded"></div>
           </div>
@@ -140,7 +188,6 @@ const History: React.FC = () => {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left py-4 px-6 font-semibold text-gray-900">Item</th>
-                <th className="text-left py-4 px-6 font-semibold text-gray-900">Type</th>
                 <th className="text-left py-4 px-6 font-semibold text-gray-900">Status</th>
                 <th className="text-left py-4 px-6 font-semibold text-gray-900">Created</th>
                 <th className="text-left py-4 px-6 font-semibold text-gray-900">Tokens</th>
@@ -155,14 +202,9 @@ const History: React.FC = () => {
                       {getTypeIcon(item.type)}
                       <div>
                         <p className="font-medium text-gray-900">{item.name}</p>
-                        <p className="text-sm text-gray-500">
-                          {item.type === 'portfolio' ? 'Portfolio Website' : 'PDF Resume'}
-                        </p>
+                        <p className="text-sm text-gray-500 capitalize">{item.type}</p>
                       </div>
                     </div>
-                  </td>
-                  <td className="py-4 px-6">
-                    <span className="capitalize text-gray-700">{item.type}</span>
                   </td>
                   <td className="py-4 px-6">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${getStatusColor(item.status)}`}>
@@ -183,17 +225,14 @@ const History: React.FC = () => {
                       {item.status === 'completed' && (
                         <>
                           {item.previewUrl && (
-                            <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                            <a href={`http://localhost:5000${item.previewUrl}`} target="_blank" rel="noopener noreferrer" className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                               <Eye className="w-4 h-4" />
-                            </button>
+                            </a>
                           )}
-                          <button className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors">
-                            <Download className="w-4 h-4" />
-                          </button>
-                          {item.previewUrl && (
-                            <button className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors">
-                              <ExternalLink className="w-4 h-4" />
-                            </button>
+                          {item.downloadUrl && (
+                            <a href={`http://localhost:5000${item.downloadUrl}`} download className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors">
+                              <Download className="w-4 h-4" />
+                            </a>
                           )}
                         </>
                       )}
@@ -219,7 +258,7 @@ const History: React.FC = () => {
             <p className="text-gray-500 mb-6">
               {searchTerm ? 'Try adjusting your search terms' : 'Start by creating your first portfolio or resume'}
             </p>
-            <button 
+            <button
               onClick={() => window.location.href = '/dashboard'}
               className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
             >
@@ -239,7 +278,6 @@ const History: React.FC = () => {
             </div>
           </div>
           <p className="text-3xl font-bold text-blue-600">{userStats.totalGenerations}</p>
-          <p className="text-sm text-gray-500 mt-1">All time</p>
         </div>
 
         <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
@@ -250,7 +288,6 @@ const History: React.FC = () => {
             </div>
           </div>
           <p className="text-3xl font-bold text-purple-600">{userStats.portfolios}</p>
-          <p className="text-sm text-gray-500 mt-1">Websites created</p>
         </div>
 
         <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
@@ -261,7 +298,6 @@ const History: React.FC = () => {
             </div>
           </div>
           <p className="text-3xl font-bold text-green-600">{userStats.resumes}</p>
-          <p className="text-sm text-gray-500 mt-1">PDFs generated</p>
         </div>
 
         <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
@@ -272,7 +308,6 @@ const History: React.FC = () => {
             </div>
           </div>
           <p className="text-3xl font-bold text-yellow-600">{userStats.successRate}%</p>
-          <p className="text-sm text-gray-500 mt-1">Successful generations</p>
         </div>
       </div>
     </div>

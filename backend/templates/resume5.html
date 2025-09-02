@@ -361,13 +361,21 @@
             
             experiences.forEach(exp => {
                 const bullets = Array.isArray(exp.description) ? exp.description : 
-                               exp.description ? exp.description.split('\n').filter(item => item.trim()) : [];
+                            exp.description ? exp.description.split('\n').filter(item => item.trim()) : [];
+                
+                // Combine company and location with comma
+                const companyName = exp.company || '';
+                const location = exp.location || '';
+                const companyWithLocation = location ? `${companyName}, ${location}` : companyName;
+                
+                // Use the date field directly
+                const dateRange = exp.date || '';
                 
                 html += `
                     <div class="experience-item">
                         <div class="job-title">${exp.jobTitle || ''}</div>
-                        <div class="company">${exp.company || ''}</div>
-                        <div class="date">${exp.startDate || ''} - ${exp.endDate || ''}</div>
+                        <div class="company">${companyWithLocation}</div>
+                        <div class="date">${dateRange}</div>
                         ${bullets.length > 0 ? `
                         <ul class="bullet-points">
                             ${bullets.map(bullet => `<li>${bullet.replace(/^[•\-\*]\s*/, '')}</li>`).join('')}
@@ -379,6 +387,7 @@
             
             container.innerHTML = html;
         }
+
 
         function renderProjects(projects) {
             const container = document.getElementById('projectsList');
@@ -427,11 +436,15 @@
             let html = '';
             
             education.forEach(edu => {
+                // Clean the date by removing "- (" and ")"
+                let cleanDate = edu.date || '';
+                cleanDate = cleanDate.replace(/- \(/g, ' ').replace(/\)/g, '');
+                
                 html += `
                     <div class="education-item">
                         <div class="degree">${edu.degree || ''}</div>
                         <div class="school">${edu.school || ''}</div>
-                        <div class="date">${edu.date || ''}</div>
+                        <div class="date">${cleanDate}</div>
                         ${edu.details ? `<div class="description">${edu.details}</div>` : ''}
                     </div>
                 `;
@@ -440,11 +453,29 @@
             container.innerHTML = html;
         }
 
+
         function renderSkills(skills) {
             const container = document.getElementById('skillsList');
             const section = document.getElementById('skillsSection');
             
-            if (!skills || skills.length === 0) {
+            // Extract skills from categories, prioritizing 'Technologies' first
+            let skillItems = [];
+            if (skills && Array.isArray(skills)) {
+                // First, try to find 'Technologies' category
+                let techCategory = skills.find(category => category.category === 'Technologies');
+                if (techCategory && Array.isArray(techCategory.items) && techCategory.items.length > 0) {
+                    skillItems = techCategory.items;
+                } else {
+                    // Fallback to 'Programming Languages' category
+                    let progCategory = skills.find(category => category.category === 'Programming Languages');
+                    if (progCategory && Array.isArray(progCategory.items) && progCategory.items.length > 0) {
+                        skillItems = progCategory.items;
+                    }
+                }
+            }
+            
+            // If no skills found, hide the section
+            if (skillItems.length === 0) {
                 section.classList.add('hidden');
                 return;
             }
@@ -452,26 +483,10 @@
             section.classList.remove('hidden');
             let html = '';
             
-            // Handle different skill formats
-            if (Array.isArray(skills)) {
-                // Check if it's an array of skill objects with categories
-                if (skills.length > 0 && typeof skills[0] === 'object' && skills.category) {
-                    // Skills grouped by categories
-                    skills.forEach(skillGroup => {
-                        const skillItems = Array.isArray(skillGroup.items) ? skillGroup.items : 
-                                          skillGroup.items ? skillGroup.items.split(',').map(s => s.trim()) : [];
-                        skillItems.forEach(skill => {
-                            html += `<div class="skill-tag">${skill}</div>`;
-                        });
-                    });
-                } else {
-                    // Simple array of skills (strings or objects with name property)
-                    skills.forEach(skill => {
-                        const skillName = typeof skill === 'string' ? skill : skill.name || skill;
-                        html += `<div class="skill-tag">${skillName}</div>`;
-                    });
-                }
-            }
+            skillItems.forEach(skill => {
+                const skillName = typeof skill === 'string' ? skill : (skill.name || skill);
+                html += `<div class="skill-tag">${skillName}</div>`;
+            });
             
             container.innerHTML = html;
         }

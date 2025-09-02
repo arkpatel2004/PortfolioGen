@@ -553,7 +553,19 @@
             const container = document.getElementById('skillsList');
             const section = document.getElementById('skillsSection');
             
-            if (!skills || skills.length === 0) {
+            // Extract items from 'Technologies' category
+            let skillItems = [];
+            if (skills && Array.isArray(skills)) {
+                const techCategory = skills.find(category => 
+                    category.category === 'Technologies' 
+                );
+                if (techCategory && Array.isArray(techCategory.items)) {
+                    skillItems = techCategory.items;
+                }
+            }
+            
+            // If no skills found, hide the section
+            if (skillItems.length === 0) {
                 section.classList.add('hidden');
                 return;
             }
@@ -561,8 +573,8 @@
             section.classList.remove('hidden');
             let html = '';
             
-            skills.forEach(skill => {
-                const skillName = typeof skill === 'string' ? skill : skill.name;
+            skillItems.forEach(skill => {
+                const skillName = typeof skill === 'string' ? skill : (skill.name || skill);
                 const skillLevel = typeof skill === 'object' ? (skill.level || 75) : 75;
                 
                 html += `
@@ -577,6 +589,8 @@
             
             container.innerHTML = html;
         }
+
+
 
         function renderLanguages(languages) {
             const container = document.getElementById('languagesList');
@@ -624,13 +638,21 @@
             
             experiences.forEach(exp => {
                 const bullets = Array.isArray(exp.description) ? exp.description : 
-                               exp.description ? exp.description.split('\n').filter(item => item.trim()) : [];
+                            exp.description ? exp.description.split('\n').filter(item => item.trim()) : [];
+                
+                // Combine company and location with comma
+                const companyName = exp.company || '';
+                const location = exp.location || '';
+                const companyWithLocation = location ? `${companyName}, ${location}` : companyName;
+                
+                // Use the date field directly
+                const dateRange = exp.date || '';
                 
                 html += `
                     <div class="timeline-item">
                         <div class="position-title">${exp.jobTitle || ''}</div>
-                        <div class="company-name">${exp.company || ''}</div>
-                        <div class="timeline-date">${exp.startDate || ''} - ${exp.endDate || ''}</div>
+                        <div class="company-name">${companyWithLocation}</div>
+                        <div class="timeline-date">${dateRange}</div>
                         ${bullets.length > 0 ? `
                         <div class="job-description">
                             <ul>
@@ -644,6 +666,7 @@
             
             container.innerHTML = html;
         }
+
 
         function renderProjects(projects) {
             const container = document.getElementById('projectsList');
@@ -694,11 +717,15 @@
             let html = '';
             
             education.forEach(edu => {
+                // Clean the date by removing "- (" and ")"
+                let cleanDate = edu.date || '';
+                cleanDate = cleanDate.replace(/- \(/g, ' ').replace(/\)/g, '');
+                
                 html += `
                     <div class="education-item">
                         <div class="degree">${edu.degree || ''}</div>
                         <div class="institution">${edu.school || ''}</div>
-                        <div class="education-date">${edu.date || ''}</div>
+                        <div class="education-date">${cleanDate}</div>
                         ${edu.details ? `<div class="education-details">${edu.details}</div>` : ''}
                     </div>
                 `;
@@ -706,6 +733,7 @@
             
             container.innerHTML = html;
         }
+
 
         function renderCertifications(certifications) {
             const container = document.getElementById('certificationsList');

@@ -10,22 +10,28 @@ const Tokens: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadUserProfile = async () => {
-      if (user?.id) {
-        try {
-          // Ensure user profile exists with tokens
-          await userService.initializeUserProfile(user.id, user.name, user.email);
-          const profile = await userService.getUserProfile(user.id);
-          setUserProfile(profile);
-        } catch (error) {
-          console.error('Error loading user profile:', error);
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
 
-    loadUserProfile();
+    // Set up a real-time listener for the user's profile
+    const unsubscribe = userService.onUserProfileSnapshot(
+      user.id,
+      (profile) => {
+        if (profile) {
+          setUserProfile(profile);
+        }
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error fetching user profile:', error);
+        setLoading(false);
+      }
+    );
+
+    // Clean up the listener when the component unmounts
+    return () => unsubscribe();
   }, [user?.id]);
 
   const handleWatchAd = async () => {
@@ -40,9 +46,8 @@ const Tokens: React.FC = () => {
       // Add 1 token to user's balance
       await userService.addTokens(user.id, 1);
       
-      // Refresh user profile
-      const updatedProfile = await userService.getUserProfile(user.id);
-      setUserProfile(updatedProfile);
+      // NO NEED to manually refresh the profile here.
+      // The real-time listener will automatically update the state.
       
     } catch (error) {
       console.error('Error adding tokens:', error);
@@ -51,20 +56,27 @@ const Tokens: React.FC = () => {
     }
   };
 
+  if (!user) {
+    // This guard clause prevents crashes during navigation
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="max-w-6xl mx-auto space-y-8">
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white">
           <div className="animate-pulse">
-            <div className="h-8 bg-white bg-opacity-20 rounded mb-4"></div>
-            <div className="h-4 bg-white bg-opacity-20 rounded"></div>
+            <div className="h-8 bg-white bg-opacity-20 rounded mb-4 w-1/3"></div>
+            <div className="h-12 bg-white bg-opacity-20 rounded w-1/4"></div>
           </div>
         </div>
       </div>
     );
   }
-
-  const currentTokens = userProfile?.tokens || 20;
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
@@ -76,7 +88,7 @@ const Tokens: React.FC = () => {
             <p className="text-blue-100">Use tokens to generate portfolios and resumes</p>
           </div>
           <div className="text-right">
-            <p className="text-5xl font-bold">{currentTokens}</p>
+            <p className="text-5xl font-bold">{userProfile?.tokens ?? 0}</p>
             <p className="text-blue-100">tokens remaining</p>
           </div>
         </div>
@@ -153,37 +165,6 @@ const Tokens: React.FC = () => {
             </div>
           </div>
 
-        </div>
-      </div>
-
-      {/* How to Earn Tokens */}
-      <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-2xl p-6 border border-green-100">
-        <h3 className="font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-          <Zap className="w-5 h-5 text-green-600" />
-          <span>How to Earn Tokens</span>
-        </h3>
-        
-        <div className="grid md:grid-cols-3 gap-6">
-          <div className="text-center">
-            <div className="w-12 h-12 bg-green-600 text-white rounded-xl flex items-center justify-center mx-auto mb-3">
-              <Play className="w-6 h-6" />
-            </div>
-            <p className="font-medium text-gray-900 mb-2">Watch Advertisements</p>
-            <p className="text-sm text-gray-600">Watch short ads to earn 1 token each</p>
-          </div>
-          
-          <div className="text-center">
-            <div className="w-12 h-12 bg-blue-600 text-white rounded-xl flex items-center justify-center mx-auto mb-3">
-              <Check className="w-6 h-6" />
-            </div>
-            <p className="font-medium text-gray-900 mb-2">Daily Login</p>
-            <p className="text-sm text-gray-600">Get bonus tokens for logging in daily (coming soon)</p>
-          </div>
-          
-          <div className="text-center">
-            <div className="w-12 h-12 bg-purple-600 text-white rounded-xl flex items-center justify-center mx-auto mb-3">
-            </div>
-          </div>
         </div>
       </div>
     </div>

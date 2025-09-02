@@ -372,17 +372,23 @@
             
             experiences.forEach(exp => {
                 const bullets = Array.isArray(exp.description) ? exp.description : 
-                               exp.description ? exp.description.split('\n').filter(item => item.trim()) : [];
+                            exp.description ? exp.description.split('\n').filter(item => item.trim()) : [];
+                
+                // Use the 'date' field directly and place it on the right side
+                const dateRange = exp.date || '';
+                
+                // Combine company and location with comma
+                const companyName = exp.company || '';
+                const location = exp.location || '';
+                const companyWithLocation = location ? `${companyName}, ${location}` : companyName;
                 
                 html += `
                     <div class="experience-item">
                         <div class="job-header">
-                            <div>
-                                <div class="job-title">${exp.jobTitle || ''}</div>
-                                <div class="company-name">${exp.company || ''}${exp.location ? ', ' + exp.location : ''}</div>
-                            </div>
-                            <div class="job-date">${exp.startDate || ''} ${exp.endDate ? '– ' + exp.endDate : ''}</div>
+                            <div class="job-title">${exp.jobTitle || ''}</div>
+                            <div class="job-date">${dateRange}</div>
                         </div>
+                        <div class="company-name">${companyWithLocation}</div>
                         ${bullets.length > 0 ? `
                         <div class="job-description">
                             <ul>
@@ -396,6 +402,7 @@
             
             container.innerHTML = html;
         }
+
 
         function renderProjects(projects) {
             const container = document.getElementById('projectsList');
@@ -450,6 +457,10 @@
             let html = '';
             
             education.forEach(edu => {
+                // Clean the date by removing "- (" and ")"
+                let cleanDate = edu.date || '';
+                cleanDate = cleanDate.replace(/- \(/g, ' ').replace(/\)/g, '');
+                
                 html += `
                     <div class="education-item">
                         <div class="education-header">
@@ -457,7 +468,7 @@
                                 <div class="degree">${edu.degree || ''}</div>
                                 <div class="school">${edu.school || ''}${edu.location ? ', ' + edu.location : ''}</div>
                             </div>
-                            <div class="job-date">${edu.date || ''}</div>
+                            <div class="job-date">${cleanDate}</div>
                         </div>
                         ${edu.details ? `<div class="education-details">${edu.details}</div>` : ''}
                     </div>
@@ -466,6 +477,7 @@
             
             container.innerHTML = html;
         }
+
 
         function renderSkills(skills) {
             const container = document.getElementById('skillsList');

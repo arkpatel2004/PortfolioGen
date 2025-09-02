@@ -1,17 +1,21 @@
-import { db } from '../firebase';
-import { 
-  doc, 
-  getDoc, 
-  setDoc, 
-  updateDoc, 
-  collection, 
-  addDoc, 
-  query, 
-  where, 
-  orderBy, 
+// src/services/userService.ts
+
+import { db } from '../firebase'; // Ensure your firebaseConfig is exported as db
+import {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  collection,
+  addDoc,
+  query,
+  where,
+  orderBy,
   getDocs,
   increment,
-  serverTimestamp 
+  serverTimestamp,
+  onSnapshot,    // <-- ADD THIS IMPORT
+  Unsubscribe,   // <-- ADD THIS IMPORT
 } from 'firebase/firestore';
 
 export interface UserProfile {
@@ -40,6 +44,7 @@ export interface GenerationItem {
   templateId: number;
 }
 
+// This interface is no longer used by History.tsx but kept for other potential uses
 export interface UserStats {
   totalGenerations: number;
   portfolios: number;
@@ -48,6 +53,8 @@ export interface UserStats {
 }
 
 class UserService {
+  // --- EXISTING METHODS (NO CHANGES) ---
+
   // Initialize new user profile
   async initializeUserProfile(userId: string, name: string, email: string): Promise<void> {
     try {
@@ -55,25 +62,17 @@ class UserService {
       const userDoc = await getDoc(userRef);
       
       if (!userDoc.exists()) {
-        const newUser: Omit<UserProfile, 'id'> = {
+        await setDoc(userRef, {
           name,
           email,
           portfoliosGenerated: 0,
           resumesGenerated: 0,
-          tokens: 20, // Default 20 tokens for new users
-          createdAt: new Date(),
-          updatedAt: new Date()
-        };
-        
-        await setDoc(userRef, {
-          ...newUser,
+          tokens: 20,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
-        
         console.log('User profile initialized successfully');
       } else {
-        // If user exists but has 0 tokens, give them 20 tokens
         const userData = userDoc.data();
         if (userData.tokens === 0 || userData.tokens === undefined) {
           await updateDoc(userRef, {
@@ -104,7 +103,6 @@ class UserService {
           updatedAt: data.updatedAt?.toDate() || new Date()
         } as UserProfile;
       }
-      
       return null;
     } catch (error) {
       console.error('Error getting user profile:', error);
@@ -112,32 +110,17 @@ class UserService {
     }
   }
 
-  // Update user tokens
-  async updateUserTokens(userId: string, tokenChange: number): Promise<void> {
-    try {
-      const userRef = doc(db, 'users', userId);
-      await updateDoc(userRef, {
-        tokens: increment(tokenChange),
-        updatedAt: serverTimestamp()
-      });
-    } catch (error) {
-      console.error('Error updating user tokens:', error);
-      throw error;
-    }
-  }
-
   // Add generation item
   async addGenerationItem(item: Omit<GenerationItem, 'id' | 'createdAt'>): Promise<string> {
     try {
-      const generationsRef = collection(db, 'generations');
+      // NOTE: Your code correctly points to a top-level 'generations' collection
+      const generationsRef = collection(db, 'generations'); 
       const docRef = await addDoc(generationsRef, {
         ...item,
         createdAt: serverTimestamp()
       });
       
-      // Update user stats
       await this.updateUserStats(item.userId, item.type, item.tokens);
-      
       return docRef.id;
     } catch (error) {
       console.error('Error adding generation item:', error);
@@ -189,7 +172,7 @@ class UserService {
     }
   }
 
-  // Get user generation history
+  // Get user generation history (one-time fetch)
   async getUserGenerations(userId: string): Promise<GenerationItem[]> {
     try {
       const generationsRef = collection(db, 'generations');
@@ -218,38 +201,93 @@ class UserService {
     }
   }
 
-  // Get user statistics
-  async getUserStats(userId: string): Promise<UserStats> {
-    try {
-      const generations = await this.getUserGenerations(userId);
-      
-      const totalGenerations = generations.length;
-      const portfolios = generations.filter(g => g.type === 'portfolio').length;
-      const resumes = generations.filter(g => g.type === 'resume').length;
-      const successful = generations.filter(g => g.status === 'completed').length;
-      const successRate = totalGenerations > 0 ? Math.round((successful / totalGenerations) * 100) : 0;
-      
-      return {
-        totalGenerations,
-        portfolios,
-        resumes,
-        successRate
-      };
-    } catch (error) {
-      console.error('Error getting user stats:', error);
-      return {
-        totalGenerations: 0,
-        portfolios: 0,
-        resumes: 0,
-        successRate: 0
-      };
-    }
+  // --- NEW REAL-TIME LISTENER METHODS ---
+
+  /**
+   * Listens for real-time updates to a user's generation history.
+   * @param userId The ID of the user.
+   * @param callback Function to call with the updated list of generations.
+   * @param onError Function to call on error.
+   * @returns An unsubscribe function to detach the listener.
+   */
+  onUserGenerationsSnapshot(
+    userId: string,
+    callback: (generations: GenerationItem[]) => void,
+    onError: (error: Error) => void
+  ): Unsubscribe {
+    const generationsRef = collection(db, 'generations');
+    const q = query(generationsRef, where('userId', '==', userId), orderBy('createdAt', 'desc'));
+
+    const unsubscribe = onSnapshot(
+      q,
+      (querySnapshot) => {
+        const generations = querySnapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            createdAt: data.createdAt?.toDate() || new Date(),
+          } as GenerationItem;
+        });
+        callback(generations);
+      },
+      (error) => {
+        console.error("Error with generations snapshot: ", error);
+        onError(error);
+      }
+    );
+
+    return unsubscribe;
   }
 
-  // Add tokens (for watching ads, etc.)
+  /**
+   * Listens for real-time updates to a user's profile document (for stats).
+   * @param userId The ID of the user.
+   * @param callback Function to call with the updated user profile.
+   * @param onError Function to call on error.
+   * @returns An unsubscribe function to detach the listener.
+   */
+  onUserProfileSnapshot(
+    userId: string,
+    callback: (profile: UserProfile | null) => void,
+    onError: (error: Error) => void
+  ): Unsubscribe {
+    const userDocRef = doc(db, 'users', userId);
+
+    const unsubscribe = onSnapshot(
+      userDocRef,
+      (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          const data = docSnapshot.data();
+          const profile: UserProfile = {
+            id: docSnapshot.id,
+            ...data,
+            createdAt: data.createdAt?.toDate() || new Date(),
+            updatedAt: data.updatedAt?.toDate() || new Date(),
+          } as UserProfile;
+          callback(profile);
+        } else {
+          callback(null);
+        }
+      },
+      (error) => {
+        console.error("Error with user profile snapshot: ", error);
+        onError(error);
+      }
+    );
+
+    return unsubscribe;
+  }
+
+  // --- Keep other methods if you have them ---
+
   async addTokens(userId: string, amount: number): Promise<void> {
     try {
-      await this.updateUserTokens(userId, amount);
+      const userRef = doc(db, 'users', userId);
+      await updateDoc(userRef, {
+        tokens: increment(amount),
+        updatedAt: serverTimestamp()
+      });
     } catch (error) {
       console.error('Error adding tokens:', error);
       throw error;
