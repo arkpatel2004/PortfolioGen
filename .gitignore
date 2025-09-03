@@ -28,4 +28,3 @@ dist-ssr
 backend/config.py
 # backend/secrets.py
 *.key
-

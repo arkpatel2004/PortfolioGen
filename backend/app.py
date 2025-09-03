@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import os
+import time
 from datetime import datetime
 import uuid
 import json
@@ -13,16 +14,16 @@ import base64
 
 # Import API keys from config file
 try:
-    from config import GEMINI_API_KEY, GITHUB_TOKEN
+    from config import GEMINI_API_KEYS, GITHUB_TOKEN
     print("✅ API keys loaded from config.py")
 except ImportError:
     print("❌ config.py not found. Please create backend/config.py with your API keys")
-    GEMINI_API_KEY = ""
+    GEMINI_API_KEYS = []
     GITHUB_TOKEN = ""
 
 # --- Configuration ---
 class Config:
-    GEMINI_API_KEY = GEMINI_API_KEY
+    GEMINI_API_KEYS = GEMINI_API_KEYS
     GITHUB_TOKEN = GITHUB_TOKEN
     UPLOAD_FOLDER = 'storage/uploads'
     GENERATED_FOLDER = 'storage/generated'
@@ -216,30 +217,117 @@ class GitHubService:
         return processed_repos[:6]
 
 class GeminiService:
-    def __init__(self, api_key):
-        try:
-            genai.configure(api_key=api_key)
-            self.model = genai.GenerativeModel('gemini-1.5-flash')
-            print("✅ Gemini Service initialized successfully.")
-        except Exception as e:
-            print(f"❌ Error initializing Gemini Service: {e}")
-            self.model = None
+    def __init__(self, api_keys):
+        if not api_keys or len(api_keys) == 0:
+            print("❌ No Gemini API keys provided")
+            self.api_keys = []
+            self.models = []
+            return
+            
+        self.original_keys = api_keys.copy()
+        self.active_keys = api_keys.copy()
+        self.cooldown_keys = {}
+        self.current_index = 0
+        self.models = {}
+        
+        print(f"🔑 Initializing GeminiService with {len(api_keys)} API keys...")
+        
+        # Initialize models for each key
+        for i, key in enumerate(api_keys):
+            try:
+                genai.configure(api_key=key)
+                model = genai.GenerativeModel('gemini-1.5-flash')
+                self.models[key] = model
+                print(f"✅ Initialized model for key {i+1}")
+            except Exception as e:
+                print(f"❌ Error initializing model for key {i+1}: {e}")
+                self.models[key] = None
+
+    def _restore_cooled_keys(self):
+        """Move keys from cooldown back to active if cooldown period expired"""
+        current_time = time.time()
+        keys_to_restore = []
+        
+        for key, cooldown_time in self.cooldown_keys.items():
+            if current_time - cooldown_time > 3600:  # 1 hour cooldown
+                keys_to_restore.append(key)
+        
+        for key in keys_to_restore:
+            self.cooldown_keys.pop(key)
+            if key not in self.active_keys:
+                self.active_keys.append(key)
+                print(f"🔄 Restored key from cooldown")
+
+    def _get_next_key(self):
+        """Get next available API key using round-robin"""
+        self._restore_cooled_keys()
+        
+        if not self.active_keys:
+            raise Exception("❌ No active API keys available. All keys in cooldown.")
+        
+        key = self.active_keys[self.current_index]
+        self.current_index = (self.current_index + 1) % len(self.active_keys)
+        return key
+
+    def _handle_api_error(self, key, error):
+        """Move key to cooldown if rate limited"""
+        error_str = str(error).lower()
+        if "429" in error_str or "quota" in error_str or "rate limit" in error_str:
+            if key in self.active_keys:
+                self.active_keys.remove(key)
+                self.cooldown_keys[key] = time.time()
+                print(f"🕒 API key moved to cooldown due to rate limit")
+            return True
+        return False
+
+    def generate_with_retry(self, prompt):
+        """Generate content with automatic key rotation and retry"""
+        if not self.active_keys and not self.cooldown_keys:
+            return "Error: No Gemini API keys configured."
+        
+        max_attempts = len(self.original_keys)
+        attempt = 0
+        last_error = None
+        
+        while attempt < max_attempts:
+            try:
+                key = self._get_next_key()
+                model = self.models.get(key)
+                
+                if not model:
+                    attempt += 1
+                    continue
+                
+                response = model.generate_content(prompt)
+                return response.text.strip()
+                
+            except Exception as e:
+                last_error = e
+                if not self._handle_api_error(key, e):
+                    # If not a rate limit error, re-raise
+                    raise e
+                attempt += 1
+                print(f"🔄 Retrying with next key... (attempt {attempt}/{max_attempts})")
+        
+        print(f"❌ All API keys exhausted after {max_attempts} attempts")
+        return f"Error: All API keys exhausted. Last error: {str(last_error)}"
 
     def generate_resume_summary(self, resume_text: str) -> str:
-        if not self.model: return "Error: Gemini model not initialized."
         prompt = f"Based on the following resume text, create a compelling and concise professional summary of 4-5 lines. Focus on key skills, experience, and career aspirations.\n\n**Resume Text:**\n---\n{resume_text}\n---"
         try:
             print("🤖 Generating resume summary with Gemini...")
-            response = self.model.generate_content(prompt)
-            summary = response.text.strip()
-            print(f"✅ Generated summary: {summary}")
-            return summary
+            summary = self.generate_with_retry(prompt)
+            if not summary.startswith("Error:"):
+                print(f"✅ Generated summary: {summary}")
+                return summary
+            else:
+                print(f"❌ Error calling Gemini API for summary: {summary}")
+                return "Passionate and skilled professional seeking to leverage expertise in software development and project management."
         except Exception as e:
             print(f"❌ Error calling Gemini API for summary: {e}")
             return "Passionate and skilled professional seeking to leverage expertise in software development and project management."
     
     def generate_project_description(self, project_name: str, existing_info: str) -> str:
-        if not self.model: return "A key project demonstrating skills in software development and problem-solving."
         prompt = f"""
         Act as a professional resume writer. Analyze the provided project information below, which could be a detailed README file or a brief summary. Your goal is to extract the most important information and write a polished, professional description of 2-3 lines for a resume's "Projects" section.
 
@@ -257,10 +345,14 @@ class GeminiService:
         """
         try:
             print(f"🔧 Generating description for project: {project_name}")
-            response = self.model.generate_content(prompt)
-            description = response.text.strip().replace("**", "")
-            print(f"✅ Generated project description: {description[:100]}...")
-            return description
+            description = self.generate_with_retry(prompt)
+            if not description.startswith("Error:"):
+                description = description.replace("**", "")
+                print(f"✅ Generated project description: {description[:100]}...")
+                return description
+            else:
+                print(f"❌ Error generating description for project {project_name}: {description}")
+                return f"A project named '{project_name}' that showcases practical application of technical skills."
         except Exception as e:
             print(f"❌ Error generating description for project {project_name}: {e}")
             return f"A project named '{project_name}' that showcases practical application of technical skills."
@@ -354,7 +446,7 @@ os.makedirs("templates", exist_ok=True)
 
 pdf_parser = PDFParser()
 github_service = GitHubService()
-gemini_service = GeminiService(api_key=Config.GEMINI_API_KEY)
+gemini_service = GeminiService(api_keys=Config.GEMINI_API_KEYS)
 template_service = TemplateService()
 
 # === TEMPLATE PREVIEW ROUTES ===
@@ -493,7 +585,7 @@ if __name__ == '__main__':
     print("📄 PDF Text Extraction: ENABLED")
     print("🤖 Gemini AI Integration: ENABLED")
     print(f"🔑 GitHub Token: {'✅ SET' if Config.GITHUB_TOKEN else '❌ NOT SET'}")
-    print(f"🔑 Gemini API: {'✅ SET' if Config.GEMINI_API_KEY else '❌ NOT SET'}")
+    print(f"🔑 Gemini API Keys: {'✅ ' + str(len(Config.GEMINI_API_KEYS)) + ' KEYS' if Config.GEMINI_API_KEYS else '❌ NOT SET'}")
     print("=" * 60)
     print("📡 Available Routes:")
     print("  - POST /api/generate")
