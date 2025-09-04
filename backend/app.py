@@ -373,10 +373,24 @@ class GeminiService:
                 project_context = readme_content
             else:
                 project_context = (f"Description: {repo.get('description', 'N/A')}. "
-                                   f"Language: {repo.get('language', 'N/A')}. "
-                                   f"Topics: {', '.join(repo.get('topics', [])) or 'N/A'}.")
+                                f"Language: {repo.get('language', 'N/A')}. "
+                                f"Topics: {', '.join(repo.get('topics', [])) or 'N/A'}.")
             generated_desc = self.generate_project_description(project_title, project_context)
-            generated_projects.append({"title": project_title, "description": generated_desc})
+            generated_projects.append({
+                "title": project_title, 
+                "description": generated_desc,
+                "image": "https://images.pexels.com/photos/196644/pexels-photo-196644.jpeg?auto=compress&cs=tinysrgb&w=400",
+                "link": repo.get('html_url', '#'),
+                "demo": repo.get('html_url', '#'),
+                "github": repo.get('html_url', '#')
+            })
+
+        # Get skills from repos
+        languages = list(set([r['language'] for r in repos if r['language']]))
+        topics = []
+        for repo in repos:
+            topics.extend(repo.get('topics', []))
+        topics = list(set(topics))
 
         user_data = {
             "name": profile.get('name') or profile.get('login', 'Unknown'),
@@ -393,16 +407,268 @@ class GeminiService:
             "projects": generated_projects,
             "education": education or [],
             "skills": [
-                {"category": "Programming Languages", "items": list(set([r['language'] for r in repos if r['language']])) or ["Python", "JavaScript"]},
-                {"category": "Technologies", "items": ["React", "Node.js", "Docker", "AWS"]}
+                {"category": "Programming Languages", "items": languages or ["Python", "JavaScript"]},
+                {"category": "Technologies", "items": topics[:10] if topics else ["React", "Node.js", "Docker", "AWS"]}
             ],
-            "certifications": []
+            "certifications": [],
+            
+            # Portfolio-specific data structures
+            "portfolio_data": self.generate_portfolio_data(profile, generated_projects, experiences, education, generated_summary, languages, topics)
         }
         
-        # Print final user data
         print_json_data(user_data, "FINAL USER DATA")
         
         return user_data
+
+    def generate_portfolio_data(self, profile, projects, experiences, education, summary, languages, topics):
+        """Generate portfolio-specific data structure for different templates"""
+        
+        name = profile.get('name') or profile.get('login', 'Unknown')
+        
+        # Common portfolio data structure
+        portfolio_data = {
+            # Template 1 structure
+            "template1": {
+                "name": name,
+                "home": {
+                    "title": f"Hi, I'm {name}",
+                    "subtitle": profile.get('bio') or "Software Developer",
+                    "description": summary,
+                    "image": f"https://github.com/{profile.get('login', 'user')}.png",
+                    "socialLinks": [
+                        {"platform": "github", "url": profile.get('html_url', '')},
+                        {"platform": "linkedin", "url": "https://www.linkedin.com/"},
+                    ]
+                },
+                "about": {
+                    "title": "About Me",
+                    "subtitle": "My introduction",
+                    "description": summary,
+                    "image": f"https://github.com/{profile.get('login', 'user')}.png",
+                    "info": [
+                        {"title": f"{len(projects)}+", "name": "Projects<br>completed"},
+                        {"title": f"{len(experiences)}+", "name": "Years<br>experience"},
+                        {"title": "5+", "name": "Technologies<br>used"}
+                    ],
+                    "cvUrl": "#"
+                },
+                "skills": self.generate_skills_for_template1(languages, topics),
+                "qualification": self.generate_qualification_data(experiences, education),
+                "services": [
+                    {
+                        "title": "Web<br>Development",
+                        "icon": "uil-web-grid",
+                        "features": [
+                            "I develop responsive web applications.",
+                            "Modern frontend and backend solutions.",
+                            "API integration and development.",
+                            "Database design and optimization."
+                        ]
+                    },
+                    {
+                        "title": "Software<br>Development",
+                        "icon": "uil-arrow",
+                        "features": [
+                            "Full-stack application development.",
+                            "Code optimization and refactoring.",
+                            "Testing and debugging.",
+                            "Version control and collaboration."
+                        ]
+                    }
+                ],
+                "portfolio": projects[:6],  # Limit to 6 projects
+                "callToAction": {
+                    "title": "Have a project in mind?",
+                    "description": "Let's work together to bring your ideas to life.",
+                    "image": "https://images.pexels.com/photos/574071/pexels-photo-574071.jpeg?auto=compress&cs=tinysrgb&w=300"
+                },
+                "contact": {
+                    "phone": "+1-234-567-8900",
+                    "email": profile.get('email', 'contact@example.com'),
+                    "location": profile.get('location', 'Location')
+                },
+                "footer": {
+                    "name": name,
+                    "subtitle": profile.get('bio') or "Software Developer",
+                    "links": [
+                        {"text": "About", "href": "#about"},
+                        {"text": "Projects", "href": "#portfolio"},
+                        {"text": "Contact", "href": "#contact"}
+                    ],
+                    "socialLinks": [
+                        {"platform": "github", "url": profile.get('html_url', '')},
+                        {"platform": "linkedin", "url": "https://linkedin.com/"}
+                    ],
+                    "copyright": f"&copy; {name}. All rights reserved"
+                }
+            },
+            
+            # Template 2 structure
+            "template2": {
+                "name": name,
+                "header": {"logo": name.split()[0] if name else "Portfolio"},
+                "home": {
+                    "greeting": "Hi, I'm",
+                    "name": name,
+                    "role": profile.get('bio') or "Software Developer",
+                    "description": summary,
+                    "buttons": {"hire": "Hire Me", "talk": "Let's Talk"},
+                    "socialLinks": [
+                        {"platform": "github", "url": profile.get('html_url', '')},
+                        {"platform": "linkedin", "url": "https://linkedin.com/"}
+                    ]
+                },
+                "about": {
+                    "heading": "About <span>Me</span>",
+                    "title": "Hello! I'm a passionate developer.",
+                    "description": summary,
+                    "image": f"https://github.com/{profile.get('login', 'user')}.png",
+                    "buttonText": "Contact Me"
+                },
+                "journey": self.generate_journey_data(experiences, education),
+                "skills": self.generate_skills_for_template2(languages, topics),
+                "footer": {"text": f"Copyright © {name}. All rights reserved."}
+            },
+            
+            # Template 3 structure
+            "template3": {
+                "name": name,
+                "logoName": name.split()[0] if name else "Portfolio",
+                "tagline": profile.get('bio') or "Creative Developer & Designer",
+                "heroDescription": summary,
+                "heroCta": {"text": "View My Work", "link": "#projects"},
+                "about": {
+                    "title": "About Me",
+                    "image": f"https://github.com/{profile.get('login', 'user')}.png",
+                    "greeting": f"Hello! I'm {name}",
+                    "paragraphs": [summary]
+                },
+                "skills": self.generate_skills_for_template3(languages, topics),
+                "projects": projects,
+                "contact": {
+                    "heading": "Let's work together!",
+                    "text": "I'm always excited to work on new projects and collaborate with amazing people.",
+                    "details": [
+                        {"icon": "📧", "value": profile.get('email', 'contact@example.com')},
+                        {"icon": "📱", "value": "+1 (555) 123-4567"},
+                        {"icon": "📍", "value": profile.get('location', 'Location')},
+                        {"icon": "🌐", "value": profile.get('blog', 'website.com')}
+                    ]
+                },
+                "social": [
+                    {"url": profile.get('html_url', ''), "icon": "🐙"},
+                    {"url": "https://linkedin.com", "icon": "💼"}
+                ],
+                "copyright": f"&copy; 2024 {name}. All rights reserved."
+            }
+        }
+        
+        return portfolio_data
+
+    def generate_skills_for_template1(self, languages, topics):
+        """Generate skills in template 1 format"""
+        skills = []
+        
+        if languages:
+            skills.append({
+                "title": "Programming Languages",
+                "subtitle": "Core technologies",
+                "icon": "uil-brackets-curly",
+                "items": [{"name": lang, "level": 85} for lang in languages[:4]]
+            })
+        
+        if topics:
+            skills.append({
+                "title": "Technologies & Frameworks",
+                "subtitle": "Tools and libraries",
+                "icon": "uil-server-network",
+                "items": [{"name": topic.title(), "level": 80} for topic in topics[:4]]
+            })
+        
+        return skills
+
+    def generate_skills_for_template2(self, languages, topics):
+        """Generate skills in template 2 format"""
+        skills = []
+        
+        if languages:
+            skills.append({
+                "title": "Programming Languages",
+                "skills": [{"name": lang, "level": 85} for lang in languages[:4]]
+            })
+        
+        if topics:
+            skills.append({
+                "title": "Technologies & Tools",
+                "skills": [{"name": topic.title(), "level": 80} for topic in topics[:4]]
+            })
+        
+        return skills
+
+    def generate_skills_for_template3(self, languages, topics):
+        """Generate skills in template 3 format"""
+        skills = []
+        
+        combined_skills = languages + topics
+        skill_chunks = [combined_skills[i:i+3] for i in range(0, min(len(combined_skills), 6), 3)]
+        
+        for i, chunk in enumerate(skill_chunks):
+            skills.append({
+                "title": f"Skill Category {i+1}",
+                "skills": [{"name": skill, "level": 85} for skill in chunk]
+            })
+        
+        return skills
+
+    def generate_qualification_data(self, experiences, education):
+        """Generate qualification data for template 1"""
+        qual_data = {}
+        
+        if education:
+            qual_data["education"] = []
+            for edu in education:
+                qual_data["education"].append({
+                    "title": edu.get("degree", "Degree"),
+                    "subtitle": edu.get("school", "Institution"),
+                    "date": edu.get("date", "Year")
+                })
+        
+        if experiences:
+            qual_data["experience"] = []
+            for exp in experiences:
+                qual_data["experience"].append({
+                    "title": exp.get("jobTitle", "Position"),
+                    "subtitle": exp.get("company", "Company"),
+                    "date": exp.get("date", "Period")
+                })
+        
+        return qual_data
+
+    def generate_journey_data(self, experiences, education):
+        """Generate journey data for template 2"""
+        journey = {"heading": "My <span>Journey</span>"}
+        
+        if education:
+            journey["educationTitle"] = "Education"
+            journey["education"] = []
+            for edu in education:
+                journey["education"].append({
+                    "year": edu.get("date", "Year"),
+                    "title": edu.get("degree", "Degree"),
+                    "description": f"Studied at {edu.get('school', 'Institution')}"
+                })
+        
+        if experiences:
+            journey["experienceTitle"] = "Experience"
+            journey["experience"] = []
+            for exp in experiences:
+                journey["experience"].append({
+                    "year": exp.get("date", "Period"),
+                    "title": exp.get("jobTitle", "Position"),
+                    "description": f"Worked at {exp.get('company', 'Company')}"
+                })
+        
+        return journey
 
 class TemplateService:
     def __init__(self):
@@ -417,8 +683,18 @@ class TemplateService:
             with open(template_path, 'r', encoding='utf-8') as f:
                 template_html = f.read()
             
-            render_func = 'renderResume' if file_type == 'resume' else 'renderPortfolio'
-            script_injection = f"<script>window.onload = () => {{ if(typeof {render_func} === 'function') {render_func}({json.dumps(user_data)}); }};</script>"
+            # Determine which data to use based on file type
+            if file_type == 'resume':
+                data_to_inject = user_data
+                render_func = 'renderResume'
+            else:  # portfolio
+                # Use the appropriate template data structure
+                portfolio_data = user_data.get('portfolio_data', {})
+                template_key = f"template{template_id}"
+                data_to_inject = portfolio_data.get(template_key, user_data)  # Fallback to user_data if template-specific data not found
+                render_func = 'renderPortfolio'
+            
+            script_injection = f"<script>window.onload = () => {{ if(typeof {render_func} === 'function') {render_func}({json.dumps(data_to_inject)}); }};</script>"
             populated_html = template_html.replace('</body>', f'{script_injection}</body>')
             
             filename = f"{file_type}_{uuid.uuid4().hex[:8]}.html"
