@@ -221,7 +221,7 @@ class GeminiService:
         if not api_keys or len(api_keys) == 0:
             print("❌ No Gemini API keys provided")
             self.api_keys = []
-            self.models = []
+            self.models = {}
             return
             
         self.original_keys = api_keys.copy()
@@ -290,6 +290,7 @@ class GeminiService:
         last_error = None
         
         while attempt < max_attempts:
+            key = None  # Initialize key to None
             try:
                 key = self._get_next_key()
                 model = self.models.get(key)
@@ -303,8 +304,8 @@ class GeminiService:
                 
             except Exception as e:
                 last_error = e
-                if not self._handle_api_error(key, e):
-                    # If not a rate limit error, re-raise
+                # Only handle API error if we have a valid key
+                if key and not self._handle_api_error(key, e):
                     raise e
                 attempt += 1
                 print(f"🔄 Retrying with next key... (attempt {attempt}/{max_attempts})")
