@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Professional Resume</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f8f9fa;
+            padding: 20px;
+            font-size: 11pt;
+        }
+        
+        .resume-container {
+            max-width: 8.5in;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a5f 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .name {
+            font-size: 28pt;
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+        
+        .title {
+            font-size: 16pt;
+            opacity: 0.9;
+            margin-bottom: 15px;
+            font-weight: 300;
+        }
+        
+        .contact-info {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            font-size: 10pt;
+        }
+        
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            opacity: 0.95;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+        }
+        
+        .section.hidden {
+            display: none;
+        }
+        
+        .section-title {
+            font-size: 16pt;
+            font-weight: 700;
+            color: #2c5aa0;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 3px solid #2c5aa0;
+            position: relative;
+        }
+        
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: #ff6b35;
+        }
+        
+        .summary {
+            background: linear-gradient(135deg, #f8f9ff 0%, #e8f0ff 100%);
+            padding: 20px;
+            border-left: 4px solid #2c5aa0;
+            border-radius: 0 8px 8px 0;
+            font-style: italic;
+            color: #444;
+            line-height: 1.7;
+        }
+        
+        .experience-item {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e9ecef;
+            position: relative;
+        }
+        
+        .experience-item:last-child {
+            border-bottom: none;
+        }
+        
+        .job-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .job-title {
+            font-size: 14pt;
+            font-weight: 600;
+            color: #2c5aa0;
+            margin-bottom: 3px;
+        }
+        
+        .company-name {
+            color: #666;
+            font-weight: 500;
+            font-size: 12pt;
+        }
+        
+        .job-date {
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 9pt;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        .job-description ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .job-description li {
+            margin-bottom: 5px;
+            color: #555;
+            position: relative;
+        }
+        
+        .job-description li::marker {
+            color: #2c5aa0;
+        }
+        
+        .education-item {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .education-item:last-child {
+            border-bottom: none;
+        }
+        
+        .education-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 5px;
+        }
+        
+        .degree {
+            font-weight: 600;
+            color: #2c5aa0;
+            font-size: 12pt;
+            margin-bottom: 3px;
+        }
+        
+        .school {
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .education-details {
+            color: #777;
+            font-size: 10pt;
+        }
+        
+        .education-date {
+            color: #ff6b35;
+            font-weight: 500;
+            font-size: 10pt;
+        }
+        
+        .skills-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .skill-category {
+            min-width: 200px;
+            margin-bottom: 15px;
+        }
+        
+        .skill-category-title {
+            font-weight: 600;
+            color: #2c5aa0;
+            margin-bottom: 8px;
+            font-size: 12pt;
+            text-decoration: underline;
+        }
+        
+        .skill-items {
+            color: #555;
+        }
+        
+        .cert-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .cert-item:last-child {
+            border-bottom: none;
+        }
+        
+        .cert-name {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .cert-date {
+            color: #ff6b35;
+            font-weight: 500;
+            font-size: 10pt;
+        }
+
+        .projects-item {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .projects-item:last-child {
+            border-bottom: none;
+        }
+
+        .project-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .project-title {
+            font-size: 14pt;
+            font-weight: 600;
+            color: #2c5aa0;
+            margin-bottom: 3px;
+        }
+
+        .project-tech {
+            color: #666;
+            font-weight: 500;
+            font-size: 11pt;
+            font-style: italic;
+        }
+
+        .project-date {
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 9pt;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .project-description {
+            margin-top: 8px;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .project-description ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .project-description li {
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        .project-description li::marker {
+            color: #2c5aa0;
+        }
+        
+        @media print {
+            body { 
+                background: white; 
+                padding: 0; 
+            }
+            .resume-container { 
+                box-shadow: none; 
+                border-radius: 0;
+                max-width: none;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .job-header, .education-header, .project-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .job-date, .education-date, .project-date {
+                margin-top: 5px;
+            }
+            .skills-list {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="resume-container" id="resume">
+        <div class="header">
+            <div class="name" id="userName"></div>
+            <div class="title" id="userTitle"></div>
+            <div class="contact-info" id="contactInfo"></div>
+        </div>
+        
+        <div class="content">
+            <!-- Summary Section -->
+            <div class="section" id="summarySection">
+                <div class="section-title">Professional Summary</div>
+                <div class="summary" id="userSummary"></div>
+            </div>
+            
+            <!-- Experience Section -->
+            <div class="section" id="experienceSection">
+                <div class="section-title">Professional Experience</div>
+                <div id="experienceList"></div>
+            </div>
+
+            <!-- Projects Section -->
+            <div class="section" id="projectsSection">
+                <div class="section-title">Projects</div>
+                <div id="projectsList"></div>
+            </div>
+            
+            <!-- Education Section -->
+            <div class="section" id="educationSection">
+                <div class="section-title">Education</div>
+                <div id="educationList"></div>
+            </div>
+            
+            <!-- Skills Section -->
+            <div class="section" id="skillsSection">
+                <div class="section-title">Technical Skills</div>
+                <div class="skills-list" id="skillsList"></div>
+            </div>
+            
+            <!-- Certifications Section -->
+            <div class="section" id="certificationsSection">
+                <div class="section-title">Certifications</div>
+                <div id="certificationsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Function to render resume from JSON data
+        function renderResume(userData) {
+            // Basic Information
+            document.getElementById('userName').textContent = userData.name || '';
+            document.getElementById('userTitle').textContent = userData.title || '';
+            document.getElementById('userSummary').textContent = userData.summary || '';
+            
+            // Contact Information
+            renderContactInfo(userData.contact);
+            
+            // Experience Section
+            renderExperience(userData.experience);
+            
+            // Projects Section
+            renderProjects(userData.projects);
+            
+            // Education Section
+            renderEducation(userData.education);
+            
+            // Skills Section
+            renderSkills(userData.skills);
+            
+            // Certifications Section
+            renderCertifications(userData.certifications);
+        }
+
+        function renderContactInfo(contact) {
+            if (!contact) return;
+            
+            const contactContainer = document.getElementById('contactInfo');
+            let contactHTML = '';
+            
+            if (contact.email) contactHTML += `<div class="contact-item">📧 ${contact.email}</div>`;
+            if (contact.phone) contactHTML += `<div class="contact-item">📱 ${contact.phone}</div>`;
+            if (contact.location) contactHTML += `<div class="contact-item">📍 ${contact.location}</div>`;
+            if (contact.linkedin) contactHTML += `<div class="contact-item">💼 ${contact.linkedin}</div>`;
+            if (contact.website) contactHTML += `<div class="contact-item">🌐 ${contact.website}</div>`;
+            if (contact.github) contactHTML += `<div class="contact-item">🔗 ${contact.github}</div>`;
+            
+            contactContainer.innerHTML = contactHTML;
+        }
+
+        function renderExperience(experiences) {
+            const container = document.getElementById('experienceList');
+            const section = document.getElementById('experienceSection');
+            
+            if (!experiences || experiences.length === 0) {
+                section.classList.add('hidden');
+                return;
+            }
+            
+            section.classList.remove('hidden');
+            let html = '';
+            
+            experiences.forEach(exp => {
+                const bullets = Array.isArray(exp.description) ? exp.description : 
+                            exp.description ? exp.description.split('\n').filter(item => item.trim()) : [];
+                
+                // Use the 'date' field directly from your data
+                const dateRange = exp.date || '';
+                
+                // Format company with location using comma separator
+                const companyName = exp.company || '';
+                const location = exp.location || '';
+                const companyWithLocation = location ? `${companyName}, ${location}` : companyName;
+                
+                html += `
+                    <div class="experience-item">
+                        <div class="job-header">
+                            <div>
+                                <div class="job-title">${exp.jobTitle || ''}</div>
+                                <div class="company-name">${companyWithLocation}</div>
+                            </div>
+                            ${dateRange ? `<div class="job-date">${dateRange}</div>` : ''}
+                        </div>
+                        ${bullets.length > 0 ? `
+                        <div class="job-description">
+                            <ul>
+                                ${bullets.map(bullet => `<li>${bullet.replace(/^[•\-\*]\s*/, '')}</li>`).join('')}
+                            </ul>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+
+        function renderProjects(projects) {
+            const container = document.getElementById('projectsList');
+            const section = document.getElementById('projectsSection');
+            
+            if (!projects || projects.length === 0) {
+                section.classList.add('hidden');
+                return;
+            }
+            
+            section.classList.remove('hidden');
+            let html = '';
+            
+            projects.forEach(project => {
+                const bullets = Array.isArray(project.description) ? project.description : 
+                               project.description ? project.description.split('\n').filter(item => item.trim()) : [];
+                
+                html += `
+                    <div class="projects-item">
+                        <div class="project-header">
+                            <div>
+                                <div class="project-title">${project.title || ''}</div>
+                                ${project.technologies ? `<div class="project-tech">Technologies: ${project.technologies}</div>` : ''}
+                            </div>
+                            ${project.date ? `<div class="project-date">${project.date}</div>` : ''}
+                        </div>
+                        <div class="project-description">
+                            ${project.summary ? `<p>${project.summary}</p>` : ''}
+                            ${bullets.length > 0 ? `
+                            <ul>
+                                ${bullets.map(bullet => `<li>${bullet.replace(/^[•\-\*]\s*/, '')}</li>`).join('')}
+                            </ul>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function renderEducation(education) {
+            const container = document.getElementById('educationList');
+            const section = document.getElementById('educationSection');
+            
+            if (!education || education.length === 0) {
+                section.classList.add('hidden');
+                return;
+            }
+            
+            section.classList.remove('hidden');
+            let html = '';
+            
+            education.forEach(edu => {
+                // Clean the date by removing bullet point "·", spaces, and parentheses
+                let cleanDate = edu.date || '';
+                cleanDate = cleanDate.replace(/^\s*·\s*\(/, '').replace(/\)$/, '').trim();
+                
+                html += `
+                    <div class="education-item">
+                        <div class="education-header">
+                            <div>
+                                <div class="degree">${edu.degree || ''}</div>
+                                <div class="school">${edu.school || ''}</div>
+                                ${edu.details ? `<div class="education-details">${edu.details}</div>` : ''}
+                            </div>
+                            <div class="education-date">${cleanDate}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function renderSkills(skills) {
+            const container = document.getElementById('skillsList');
+            const section = document.getElementById('skillsSection');
+            
+            if (!skills || skills.length === 0) {
+                section.classList.add('hidden');
+                return;
+            }
+            
+            section.classList.remove('hidden');
+            let html = '';
+            
+            skills.forEach(skillGroup => {
+                const skillItems = Array.isArray(skillGroup.items) ? 
+                                  skillGroup.items.join(', ') : skillGroup.items || '';
+                
+                html += `
+                    <div class="skill-category">
+                        <div class="skill-category-title">${skillGroup.category || ''}:</div>
+                        <div class="skill-items">${skillItems}</div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function renderCertifications(certifications) {
+            const container = document.getElementById('certificationsList');
+            const section = document.getElementById('certificationsSection');
+            
+            if (!certifications || certifications.length === 0) {
+                section.classList.add('hidden');
+                return;
+            }
+            
+            section.classList.remove('hidden');
+            let html = '';
+            
+            certifications.forEach(cert => {
+                html += `
+                    <div class="cert-item">
+                        <span class="cert-name">${cert.name || ''}</span>
+                        <span class="cert-date">${cert.date || ''}</span>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // Example function to load data from backend
+        async function loadUserData(userId) {
+            try {
+                // Replace this URL with your actual backend endpoint
+                const response = await fetch(`/api/resume/${userId}`);
+                const userData = await response.json();
+                renderResume(userData);
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                // Load default data if backend fails
+                loadDefaultData();
+            }
+        }
+
+        // Function to load default sample data
+        function loadDefaultData() {
+            const sampleData = {
+                name: "John Smith",
+                title: "Full Stack Developer",
+                summary: "Experienced Full Stack Developer with 5+ years of expertise in building scalable web applications using modern technologies. Proven track record of delivering high-quality software solutions and leading development teams.",
+                contact: {
+                    email: "john.smith@email.com",
+                    phone: "(555) 123-4567",
+                    location: "San Francisco, CA",
+                    linkedin: "linkedin.com/in/johnsmith",
+                    github: "github.com/johnsmith"
+                },
+                experience: [
+                    {
+                        jobTitle: "Senior Full Stack Developer",
+                        company: "Tech Solutions Inc., San Francisco, CA",
+                        startDate: "Jan 2022",
+                        endDate: "Present",
+                        description: [
+                            "Led development of microservices architecture serving 10M+ users",
+                            "Implemented CI/CD pipelines reducing deployment time by 60%",
+                            "Mentored 5 junior developers and conducted code reviews",
+                            "Optimized database queries resulting in 40% performance improvement"
+                        ]
+                    },
+                    {
+                        jobTitle: "Full Stack Developer",
+                        company: "StartupXYZ, Palo Alto, CA",
+                        startDate: "Jun 2020",
+                        endDate: "Dec 2021",
+                        description: [
+                            "Built responsive web applications using React and Node.js",
+                            "Developed REST APIs handling 1M+ daily requests",
+                            "Collaborated with UX team to implement user-friendly interfaces"
+                        ]
+                    }
+                ],
+                projects: [
+                    {
+                        title: "E-commerce Platform",
+                        technologies: "React, Node.js, MongoDB, AWS",
+                        date: "2023",
+                        summary: "Built a full-featured e-commerce platform with real-time inventory management",
+                        description: [
+                            "Implemented secure payment processing with Stripe integration",
+                            "Built admin dashboard for inventory and order management",
+                            "Achieved 99.9% uptime with AWS deployment"
+                        ]
+                    },
+                    {
+                        title: "Real-time Chat Application",
+                        technologies: "Vue.js, Socket.io, Redis",
+                        date: "2022",
+                        summary: "Developed a real-time messaging platform supporting group chats and file sharing",
+                        description: [
+                            "Implemented WebSocket connections for instant messaging",
+                            "Built file upload and sharing functionality",
+                            "Supports 1000+ concurrent users"
+                        ]
+                    }
+                ],
+                education: [
+                    {
+                        degree: "Bachelor of Science in Computer Science",
+                        school: "Stanford University, CA",
+                        details: "GPA: 3.8/4.0 | Dean's List",
+                        date: "2016-2020"
+                    }
+                ],
+                skills: [
+                    {
+                        category: "Programming Languages",
+                        items: ["JavaScript", "Python", "Java", "TypeScript", "Go"]
+                    },
+                    {
+                        category: "Frontend",
+                        items: ["React", "Vue.js", "Angular", "HTML/CSS", "Sass"]
+                    },
+                    {
+                        category: "Backend",
+                        items: ["Node.js", "Express", "Django", "Spring Boot", "PostgreSQL", "MongoDB"]
+                    },
+                    {
+                        category: "DevOps & Tools",
+                        items: ["AWS", "Docker", "Kubernetes", "Jenkins", "Git", "Redis"]
+                    }
+                ],
+                certifications: [
+                    {
+                        name: "AWS Certified Solutions Architect",
+                        date: "2023"
+                    },
+                    {
+                        name: "Google Cloud Professional Developer",
+                        date: "2022"
+                    }
+                ]
+            };
+            
+            renderResume(sampleData);
+        }
+
+        // Initialize with sample data on page load
+        window.onload = function() {
+            loadDefaultData();
+            
+            // Example: Load specific user data
+            // loadUserData('user123');
+        };
+
+        // Global function to update resume with new data
+        window.updateResume = renderResume;
+    </script>
+</body>
+</html>
