@@ -3,17 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Github, Linkedin, Code, Zap, Download, ChevronRight,
-  User, Mail, Lock, Eye, EyeOff
+  User, Mail, Lock, Eye, EyeOff, CheckCircle
 } from 'lucide-react';
 
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
-  const { login, signup, isAuthenticated } = useAuth();
+  const { login, signup, resendVerification, isAuthenticated, user } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [showVerificationMessage, setShowVerificationMessage] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -30,16 +31,24 @@ const LandingPage: React.FC = () => {
     e.preventDefault();
     setIsLoading(true);
     setErrorMsg("");
+    setShowVerificationMessage(false);
+
     try {
       if (isLogin) {
         await login(formData.email, formData.password);
+        navigate('/dashboard');
       } else {
-        await signup(formData.name, formData.email, formData.password);
+        const result = await signup(formData.name, formData.email, formData.password);
+        if (result.needsVerification) {
+          setShowVerificationMessage(true);
+          setFormData({ name: '', email: formData.email, password: '' });
+        }
       }
-      navigate('/dashboard');
     } catch (error: any) {
       if (isLogin) {
-        if (error.code === "auth/user-not-found") {
+        if (error.message === 'email-not-verified') {
+          setErrorMsg("Please verify your email before logging in. Check your inbox for verification link.");
+        } else if (error.code === "auth/user-not-found") {
           setErrorMsg("Invalid email. This email is not registered.");
         } else if (error.code === "auth/wrong-password") {
           setErrorMsg("Invalid password. Please try again.");
@@ -65,12 +74,26 @@ const LandingPage: React.FC = () => {
     }
   };
 
+  const handleResendVerification = async () => {
+    try {
+      setIsLoading(true);
+      await resendVerification();
+      setErrorMsg("");
+      alert("Verification email sent! Please check your inbox.");
+    } catch (error) {
+      setErrorMsg("Failed to resend verification email. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Open login modal and clear form/errors
   const openLogin = () => {
     setShowAuth(true);
     setIsLogin(true);
     setFormData({ name: '', email: '', password: '' });
     setErrorMsg('');
+    setShowVerificationMessage(false);
   };
 
   // Open signup modal and clear form/errors
@@ -79,6 +102,7 @@ const LandingPage: React.FC = () => {
     setIsLogin(false);
     setFormData({ name: '', email: '', password: '' });
     setErrorMsg('');
+    setShowVerificationMessage(false);
   };
 
   const features = [
@@ -139,7 +163,7 @@ const LandingPage: React.FC = () => {
         </nav>
       </header>
 
-      {/* Hero Section */}
+      {/* Hero Section - Same as before */}
       <main className="relative z-10 px-6 pt-20 pb-32">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
@@ -168,7 +192,7 @@ const LandingPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Features Grid */}
+          {/* Features Grid - Same as before */}
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
               <div
@@ -191,100 +215,134 @@ const LandingPage: React.FC = () => {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
             <div className="p-8">
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-3xl font-bold text-gray-900">
-                  {isLogin ? 'Welcome Back' : 'Create Account'}
-                </h2>
-                <button
-                  onClick={() => setShowAuth(false)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                  aria-label="Close"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              <div className="relative mb-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-200"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-white text-red-600 font-semibold">
-                    {errorMsg}
-                  </span>
-                </div>
-              </div>
-
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {!isLogin && (
-                  <div className="relative">
-                    <User className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                      type="text"
-                      placeholder="Full Name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:outline-none transition-colors"
-                      required
-                    />
-                  </div>
-                )}
-
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="email"
-                    placeholder="Email Address"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:outline-none transition-colors"
-                    required
-                  />
-                </div>
-
-                <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full pl-12 pr-12 py-4 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:outline-none transition-colors"
-                    required
-                  />
+              {showVerificationMessage ? (
+                // Email Verification Message
+                <div className="text-center">
+                  <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Check Your Email</h2>
+                  <p className="text-gray-600 mb-6">
+                    We've sent a verification link to <strong>{formData.email}</strong>. 
+                    Click the link to verify your account, then return here to sign in.
+                  </p>
                   <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    onClick={handleResendVerification}
+                    disabled={isLoading}
+                    className="w-full py-3 bg-blue-100 text-blue-600 rounded-2xl hover:bg-blue-200 transition-all duration-200 font-medium mb-4 disabled:opacity-50"
                   >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {isLoading ? 'Sending...' : 'Resend Verification Email'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowVerificationMessage(false);
+                      setIsLogin(true);
+                      setFormData({ name: '', email: '', password: '' });
+                    }}
+                    className="text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    Already verified? Sign In
                   </button>
                 </div>
+              ) : (
+                // Regular Auth Form
+                <>
+                  <div className="flex items-center justify-between mb-8">
+                    <h2 className="text-3xl font-bold text-gray-900">
+                      {isLogin ? 'Welcome Back' : 'Create Account'}
+                    </h2>
+                    <button
+                      onClick={() => setShowAuth(false)}
+                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                      aria-label="Close"
+                    >
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
 
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isLoading ? 'Processing...' : (isLogin ? 'Sign In' : 'Create Account')}
-                </button>
-              </form>
+                  {errorMsg && (
+                    <div className="relative mb-6">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-gray-200"></div>
+                      </div>
+                      <div className="relative flex justify-center text-sm">
+                        <span className="px-4 bg-white text-red-600 font-semibold">
+                          {errorMsg}
+                        </span>
+                      </div>
+                    </div>
+                  )}
 
-              <div className="mt-6 text-center">
-                <button
-                  onClick={() => {
-                    setIsLogin(!isLogin);
-                    setFormData({ name: '', email: '', password: '' });
-                    setErrorMsg('');
-                  }}
-                  className="text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
-                </button>
-              </div>
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    {!isLogin && (
+                      <div className="relative">
+                        <User className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <input
+                          type="text"
+                          placeholder="Full Name"
+                          value={formData.name}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:outline-none transition-colors"
+                          required
+                        />
+                      </div>
+                    )}
+
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <input
+                        type="email"
+                        placeholder="Email Address"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:outline-none transition-colors"
+                        required
+                      />
+                    </div>
+
+                    <div className="relative">
+                      <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Password"
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        className="w-full pl-12 pr-12 py-4 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:outline-none transition-colors"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isLoading ? 'Processing...' : (isLogin ? 'Sign In' : 'Create Account')}
+                    </button>
+                  </form>
+
+                  <div className="mt-6 text-center">
+                    <button
+                      onClick={() => {
+                        setIsLogin(!isLogin);
+                        setFormData({ name: '', email: '', password: '' });
+                        setErrorMsg('');
+                      }}
+                      className="text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

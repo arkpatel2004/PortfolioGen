@@ -56,6 +56,7 @@ class UserService {
   // --- EXISTING METHODS (NO CHANGES) ---
 
   // Initialize new user profile
+  // Update your existing method
   async initializeUserProfile(userId: string, name: string, email: string): Promise<void> {
     try {
       const userRef = doc(db, 'users', userId);
@@ -67,23 +68,34 @@ class UserService {
           email,
           portfoliosGenerated: 0,
           resumesGenerated: 0,
-          tokens: 20,
+          tokens: 20, // Give 20 tokens to verified users
+          emailVerified: true, // Add this field
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
-        console.log('User profile initialized successfully');
+        console.log('Verified user profile initialized with 20 tokens');
       } else {
-        const userData = userDoc.data();
-        if (userData.tokens === 0 || userData.tokens === undefined) {
-          await updateDoc(userRef, {
-            tokens: 20,
-            updatedAt: serverTimestamp()
-          });
-          console.log('Updated existing user with 20 tokens');
-        }
+        // User exists, make sure they're marked as verified
+        await updateDoc(userRef, {
+          emailVerified: true,
+          updatedAt: serverTimestamp()
+        });
+        console.log('Existing user marked as email verified');
       }
     } catch (error) {
       console.error('Error initializing user profile:', error);
+      throw error;
+    }
+  }
+
+  // Add this method to your UserService class
+  async handleEmailVerification(userId: string, name: string, email: string): Promise<void> {
+    try {
+      // Now that email is verified, create the user profile in Firestore
+      await this.initializeUserProfile(userId, name, email);
+      console.log('User profile created after email verification');
+    } catch (error) {
+      console.error('Error creating user profile after verification:', error);
       throw error;
     }
   }

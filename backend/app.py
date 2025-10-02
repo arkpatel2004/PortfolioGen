@@ -162,14 +162,14 @@ class GeminiService:
         self.api_keys = api_keys
         self.current_key_index = 0
         genai.configure(api_key=self.api_keys[self.current_key_index])
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        self.model = genai.GenerativeModel('gemini-2.0-flash')
         print(f"🤖 GeminiService initialized with {len(self.api_keys)} API key(s).")
 
     def _rotate_key(self):
         self.current_key_index = (self.current_key_index + 1) % len(self.api_keys)
         new_key = self.api_keys[self.current_key_index]
         genai.configure(api_key=new_key)
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        self.model = genai.GenerativeModel('gemini-2.0-flash')
         print(f"🔄 Rotated to Gemini API key index {self.current_key_index}")
 
     def generate_content(self, prompt: str):
@@ -185,7 +185,7 @@ class GeminiService:
         raise Exception("❌ All Gemini API keys are rate-limited or invalid.")
 
     def generate_resume_summary(self, resume_text: str) -> str:
-        prompt = f"Based on the following resume text, create a compelling professional summary of 4-5 lines.\n\n**Resume Text:**\n---\n{resume_text}\n---"
+        prompt = f"Based on the following resume text, create a compelling professional summary of 4-5 lines.Do not provide multiple options or explanations.\n\n**Resume Text:**\n---\n{resume_text}\n---Output only the final summary without any prefacing text, options, or additional commentary."
         try:
             return self.generate_content(prompt)
         except Exception as e:
@@ -199,6 +199,8 @@ class GeminiService:
         1.  **Length:** The description must be between 3 and 5 lines long.
         2.  **Content Focus:** Focus on the project's core functionality, the problem it solves, and the value it provides to an end-user. Describe WHAT the application is and what it DOES.
         3.  **Exclusion Criteria:**
+            - No multiple options or explanations
+            - Output only the final description without any prefacing text.
             - **Crucially, DO NOT mention specific programming languages** (e.g., Python, JavaScript).
             - **DO NOT mention specific AI-as-a-service tools** or brand names (e.g., ChatGPT, Lobe.ai, Bolt). Instead, describe the functionality (e.g., "a custom machine learning model for image recognition," "a natural language processing feature").
             - Mention general technologies (like 'REST API', 'NoSQL database', 'machine learning model') only to support the description of what was built.

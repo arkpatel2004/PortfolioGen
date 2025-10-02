@@ -7,6 +7,7 @@ import {
   createUserWithEmailAndPassword,
   updateProfile,
   signOut,
+  sendEmailVerification,
   User as FirebaseUser,
 } from "firebase/auth";
 
@@ -15,13 +16,15 @@ interface User {
   name: string;
   email: string;
   avatar: string;
+  emailVerified: boolean; // Add this field
 }
 
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string) => Promise<void>;
+  signup: (name: string, email: string, password: string) => Promise<{ needsVerification: boolean }>;
   logout: () => Promise<void>;
+  resendVerification: () => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -44,6 +47,7 @@ const extractUser = (user: FirebaseUser): User => ({
   name: user.displayName ?? "",
   email: user.email ?? "",
   avatar: user.photoURL ?? "",
+  emailVerified: user.emailVerified, // Add this field
 });
 
 const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
@@ -61,19 +65,34 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const login = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    
+    // Check if email is verified
+    if (!userCredential.user.emailVerified) {
+      throw new Error('email-not-verified');
+    }
   };
 
   const signup = async (name: string, email: string, password: string) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    
     if (userCredential?.user) {
       await updateProfile(userCredential.user, { displayName: name });
-      // Initialize user profile in Firestore
-      await userService.initializeUserProfile(userCredential.user.uid, name, email);
-      // Wait a moment for the profile to be created, then refresh the user state
-      setTimeout(() => {
-        setUser(extractUser(userCredential.user));
-      }, 100);
+      
+      // Send verification email
+      await sendEmailVerification(userCredential.user);
+      
+      // DON'T initialize user profile in Firestore yet - wait for verification
+      
+      return { needsVerification: true };
+    }
+    
+    return { needsVerification: false };
+  };
+
+  const resendVerification = async () => {
+    if (auth.currentUser && !auth.currentUser.emailVerified) {
+      await sendEmailVerification(auth.currentUser);
     }
   };
 
@@ -87,7 +106,8 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     signup,
     logout,
-    isAuthenticated: !!user,
+    resendVerification,
+    isAuthenticated: !!user && !!user.emailVerified, // Only authenticated if email verified
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
