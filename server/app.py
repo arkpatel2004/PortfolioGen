@@ -11,16 +11,38 @@ from io import BytesIO
 import PyPDF2
 import google.generativeai as genai
 import base64
+from dotenv import load_dotenv
 
-# Import API keys from config file
-try:
-    from config import GEMINI_API_KEYS, GITHUB_TOKEN
-    print("✅ API keys loaded from config.py")
-except ImportError:
-    print("❌ config.py not found. Please create backend/config.py with your API keys")
-    GEMINI_API_KEYS = []
-    GITHUB_TOKEN = ""
+# Load .env file for local development
+load_dotenv()
 
+# Get API keys from environment variables
+def get_api_keys():
+    keys_str = os.getenv('GEMINI_API_KEYS', '')
+    if keys_str:
+        return [key.strip() for key in keys_str.split(',') if key.strip()]
+    
+    # Fallback - try importing from config.py for local development
+    try:
+        from config import GEMINI_API_KEYS as local_keys
+        return local_keys
+    except ImportError:
+        print("❌ No API keys found in environment variables or config.py")
+        return []
+
+GEMINI_API_KEYS = get_api_keys()
+GITHUB_TOKEN = os.getenv('GITHUB_TOKEN', '')
+
+# Fallback for GitHub token if not in env
+if not GITHUB_TOKEN:
+    try:
+        from config import GITHUB_TOKEN as local_token
+        GITHUB_TOKEN = local_token
+    except ImportError:
+        pass
+
+print(f"✅ Loaded {len(GEMINI_API_KEYS)} Gemini API keys")
+print(f"✅ GitHub token: {'SET' if GITHUB_TOKEN else 'NOT SET'}")
 # --- Configuration ---
 class Config:
     GEMINI_API_KEYS = GEMINI_API_KEYS
