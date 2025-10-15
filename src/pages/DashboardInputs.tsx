@@ -161,17 +161,17 @@ const DashboardInputs: React.FC = () => {
     {
       id: 1,
       name: 'Modern Developer',
-      image: './image/p1.png',
+      image: '/image/p1.png',
     },
     {
       id: 2,
       name: 'Animated Dark',
-      image: './image/p2.png',
+      image: '/image/p2.png',
     },
     {
       id: 3,
       name: 'Gradient Dreams',
-      image: './image/p3.png',
+      image: '/image/p3.png',
     }
   ];
 
@@ -179,27 +179,27 @@ const DashboardInputs: React.FC = () => {
     {
       id: 1,
       name: 'Professional Gradient Corporate',
-      image: './image/r1.png',
+      image: '/image/r1.png',
     },
     {
       id: 2,
       name: 'Classic Minimalist Professional',
-      image: './image/r2.png',
+      image: '/image/r2.png',
     },
     {
       id: 3,
       name: 'Traditional Academic Professional',
-      image: './image/r3.png',
+      image: '/image/r3.png',
     },
     {
       id: 4,
       name: 'Modern Dark Sidebar Resume',
-      image: './image/r4.png',
+      image: '/image/r4.png',
     },
     {
       id: 5,
       name: 'Simple Clean Professional',
-      image: './image/r5.png',
+      image: '/image/r5.png',
     }
   ];
 
