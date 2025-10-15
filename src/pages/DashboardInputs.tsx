@@ -13,6 +13,9 @@ interface GenerateResponse {
   error?: string;
 }
 
+// API URL configuration - use localhost:5000 in development
+const API_URL = import.meta.env.DEV ? 'http://localhost:5000' : '';
+
 const DashboardInputs: React.FC = () => {
   const { user } = useAuth();
   const [githubUrl, setGithubUrl] = useState('');
@@ -109,10 +112,16 @@ const DashboardInputs: React.FC = () => {
       formData.append('portfolio_template', selectedPortfolioTemplate.toString());
       formData.append('resume_template', selectedResumeTemplate.toString());
 
-      const response = await fetch('http://localhost:5000/api/generate', {
+      // FIXED: Use correct API URL
+      console.log('Sending request to:', `${API_URL}/api/generate`);
+      const response = await fetch(`${API_URL}/api/generate`, {
         method: 'POST',
         body: formData,
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       const result = await response.json();
 
@@ -194,32 +203,22 @@ const DashboardInputs: React.FC = () => {
     }
   ];
 
-  // Updated preview functions with better error handling
   const handlePreviewPortfolio = async (templateId: number) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/templates/portfolio/${templateId}`);
+      // FIXED: Use correct API URL
+      const response = await fetch(`${API_URL}/api/templates/portfolio/${templateId}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const htmlContent = await response.text();
-      const blob = new Blob([htmlContent], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      
-      // Open in new tab
       const newWindow = window.open();
       if (newWindow) {
         newWindow.document.open();
         newWindow.document.write(htmlContent);
         newWindow.document.close();
-      } else {
-        // Fallback if popup blocked
-        window.open(url, '_blank');
       }
-      
-      // Clean up the object URL after a delay
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (error) {
       console.error('Error loading portfolio template:', error);
       setError(`Error loading portfolio template: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -228,29 +227,20 @@ const DashboardInputs: React.FC = () => {
 
   const handlePreviewResume = async (templateId: number) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/templates/resume/${templateId}`);
+      // FIXED: Use correct API URL
+      const response = await fetch(`${API_URL}/api/templates/resume/${templateId}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const htmlContent = await response.text();
-      const blob = new Blob([htmlContent], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      
-      // Open in new tab
       const newWindow = window.open();
       if (newWindow) {
         newWindow.document.open();
         newWindow.document.write(htmlContent);
         newWindow.document.close();
-      } else {
-        // Fallback if popup blocked
-        window.open(url, '_blank');
       }
-      
-      // Clean up the object URL after a delay
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (error) {
       console.error('Error loading resume template:', error);
       setError(`Error loading resume template: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -258,12 +248,14 @@ const DashboardInputs: React.FC = () => {
   };
 
   const openPreview = (url: string) => {
-    window.open(`http://localhost:5000${url}`, '_blank');
+    // FIXED: Use correct API URL
+    window.open(`${API_URL}${url}`, '_blank');
   };
 
   const downloadFile = (url: string, filename: string) => {
+    // FIXED: Use correct API URL
     const link = document.createElement('a');
-    link.href = `http://localhost:5000${url}`;
+    link.href = `${API_URL}${url}`;
     link.download = filename;
     document.body.appendChild(link);
     link.click();

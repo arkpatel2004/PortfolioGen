@@ -23,8 +23,10 @@ dist-ssr
 *.sln
 *.sw?
 .env
-
-# Secrets and configuration files
+.vercel
+.env
 backend/config.py
-# backend/secrets.py
-*.key
+/tmp
+.DS_Store
+dist/
+.vercel/

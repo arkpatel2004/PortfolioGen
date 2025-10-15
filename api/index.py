@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import os
 import time
@@ -12,21 +12,19 @@ import PyPDF2
 import google.generativeai as genai
 import base64
 
-# Import API keys from config file
-try:
-    from config import GEMINI_API_KEYS, GITHUB_TOKEN
-    print("✅ API keys loaded from config.py")
-except ImportError:
-    print("❌ config.py not found. Please create backend/config.py with your API keys")
-    GEMINI_API_KEYS = []
-    GITHUB_TOKEN = ""
+from dotenv import load_dotenv
+# Load environment variables from .env file for local development
+load_dotenv()
 
 # --- Configuration ---
 class Config:
-    GEMINI_API_KEYS = GEMINI_API_KEYS
-    GITHUB_TOKEN = GITHUB_TOKEN
-    UPLOAD_FOLDER = 'storage/uploads'
-    GENERATED_FOLDER = 'storage/generated'
+    # Get API keys from environment variables (Vercel dashboard)
+    GEMINI_API_KEYS = os.environ.get('GEMINI_API_KEYS', '').split(',') if os.environ.get('GEMINI_API_KEYS') else []
+    GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN', '')
+    
+    # Use /tmp for temporary storage (cleared after function execution)
+    UPLOAD_FOLDER = '/tmp/uploads'
+    GENERATED_FOLDER = '/tmp/generated'
     MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
 app = Flask(__name__)
@@ -60,7 +58,6 @@ class PDFParser:
                 if page_text and page_text.strip():
                     text += page_text + "\n"
             
-            # --- ADDED PRINT STATEMENT as requested ---
             print("\n" + "=" * 50)
             print("📝 FULL EXTRACTED PDF TEXT:")
             print("=" * 50)
@@ -98,9 +95,9 @@ class PDFParser:
         return experiences, education
 
 class GitHubService:
-    def __init__(self):
+    def __init__(self, token=None):
         self.base_url = "https://api.github.com"
-        self.headers = {"Authorization": f"Bearer {Config.GITHUB_TOKEN}"} if Config.GITHUB_TOKEN else {}
+        self.headers = {"Authorization": f"Bearer {token}"} if token else {}
 
     def extract_username_from_url(self, github_url):
         match = re.search(r'github\.com/([^/]+)', github_url)
@@ -158,7 +155,8 @@ class GitHubService:
 
 class GeminiService:
     def __init__(self, api_keys):
-        if not api_keys: raise ValueError("❌ No Gemini API keys provided.")
+        if not api_keys or api_keys == ['']: 
+            raise ValueError("❌ No Gemini API keys provided.")
         self.api_keys = api_keys
         self.current_key_index = 0
         genai.configure(api_key=self.api_keys[self.current_key_index])
@@ -226,8 +224,6 @@ class GeminiService:
 
     def generate_skills_for_template1(self, languages, topics):
         skills = []
-        
-        # Programming Languages
         if languages:
             skills.append({
                 "title": "Programming Languages",
@@ -235,8 +231,6 @@ class GeminiService:
                 "icon": "uil-brackets-curly",
                 "items": [{"name": lang, "level": 85} for lang in languages[:4]]
             })
-            
-        # Technologies & Frameworks (with a fallback)
         final_topics = [t.title() for t in topics] if topics else ["React", "Node.js", "Docker", "Firebase"]
         skills.append({
             "title": "Technologies & Frameworks",
@@ -244,7 +238,6 @@ class GeminiService:
             "icon": "uil-server-network",
             "items": [{"name": topic, "level": 80} for topic in final_topics[:4]]
         })
-            
         return skills
 
     def generate_skills_for_template2(self, languages, topics):
@@ -254,34 +247,26 @@ class GeminiService:
         return skills
 
     def generate_skills_for_template3(self, languages, topics):
-            """Generates skills in the format expected by portfolio3.html"""
-            skills_data = []
-            
-            # Create a card for Programming Languages
-            if languages:
-                skills_data.append({
-                    "icon": "💻",
-                    "title": "Programming Languages",
-                    "description": ", ".join(languages)
-                })
-            
-            # Create a card for Technologies & Frameworks
-            if topics:
-                skills_data.append({
-                    "icon": "🛠️",
-                    "title": "Technologies & Frameworks",
-                    "description": ", ".join([t.title() for t in topics])
-                })
-            
-            # Add a fallback card if both lists are empty
-            if not skills_data:
-                skills_data.append({
-                    "icon": "💡",
-                    "title": "Core Competencies",
-                    "description": "Full-Stack Development, Problem Solving, and System Design."
-                })
-                
-            return skills_data
+        skills_data = []
+        if languages:
+            skills_data.append({
+                "icon": "💻",
+                "title": "Programming Languages",
+                "description": ", ".join(languages)
+            })
+        if topics:
+            skills_data.append({
+                "icon": "🛠️",
+                "title": "Technologies & Frameworks",
+                "description": ", ".join([t.title() for t in topics])
+            })
+        if not skills_data:
+            skills_data.append({
+                "icon": "💡",
+                "title": "Core Competencies",
+                "description": "Full-Stack Development, Problem Solving, and System Design."
+            })
+        return skills_data
 
     def generate_qualification_data(self, experiences, education):
         return {
@@ -326,11 +311,9 @@ class GeminiService:
                 time.sleep(1)
         print("🤖 [4/5] ✅ All AI Content Generated.")
 
-        # --- FIX for empty/duplicate Technologies section ---
         languages = [lang for lang in list(set(r.get('language') for r in repos if r.get('language'))) if lang != "Jupyter Notebook"]
         topics = list(set(topic for repo in repos for topic in repo.get('topics', [])))
         
-        # Jupyter Notebook is a tool/technology, not a language
         if any(r.get('language') == "Jupyter Notebook" for r in repos):
             if "Jupyter Notebook" not in topics:
                 topics.append("Jupyter Notebook")
@@ -353,13 +336,14 @@ class GeminiService:
             "portfolio_data": self.generate_portfolio_data(profile, generated_projects, experiences, education, generated_summary, languages, topics)
         }
         
-        # --- PRINT FINAL OBJECT as requested ---
         print_json_data(user_data, "FINAL COMPILED USER DATA")
         return user_data
 
 class TemplateService:
     def __init__(self):
-        self.templates_dir = "templates"
+        # Templates are in the root 'templates' folder
+        self.templates_dir = os.path.join(os.path.dirname(__file__), '..', 'templates')
+        # Use /tmp for temporary file storage
         self.storage_dir = Config.GENERATED_FOLDER
     
     def _generate_file(self, user_data, template_id, file_type):
@@ -396,21 +380,35 @@ class TemplateService:
     def generate_portfolio(self, user_data, template_id):
         return self._generate_file(user_data, template_id, 'portfolio')
 
-# --- Initialization & Routes ---
+# --- Initialization ---
+# Create /tmp directories on function startup
 os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(Config.GENERATED_FOLDER, exist_ok=True)
-os.makedirs("templates", exist_ok=True)
 
+# Initialize services
 pdf_parser = PDFParser()
-github_service = GitHubService()
+github_service = GitHubService(token=Config.GITHUB_TOKEN)
 gemini_service = GeminiService(api_keys=Config.GEMINI_API_KEYS)
 template_service = TemplateService()
+
+# --- Routes ---
+
+@app.route('/')
+@app.route('/api')
+def home():
+    """Health check endpoint"""
+    return jsonify({
+        'status': 'online',
+        'message': 'Portfolio Generator API - Serverless',
+        'timestamp': datetime.now().isoformat()
+    })
 
 @app.route('/api/generate', methods=['POST'])
 def generate_portfolio_resume():
     try:
         if 'linkedin_pdf' not in request.files or not request.form.get('github_url'):
             return jsonify({'error': 'Missing required fields'}), 400
+        
         pdf_file = request.files['linkedin_pdf']
         github_url = request.form.get('github_url')
         portfolio_template = int(request.form.get('portfolio_template', 1))
@@ -442,16 +440,62 @@ def generate_portfolio_resume():
 
 @app.route('/api/download/<file_type>/<filename>')
 def download_file(file_type, filename):
-    return send_from_directory(Config.GENERATED_FOLDER, filename, as_attachment=True)
+    """Download generated file from /tmp"""
+    file_path = os.path.join(Config.GENERATED_FOLDER, filename)
+    if os.path.exists(file_path):
+        return send_file(file_path, as_attachment=True, download_name=filename)
+    return jsonify({'error': 'File not found'}), 404
 
 @app.route('/api/preview/<file_type>/<filename>')
 def preview_file(file_type, filename):
-    return send_from_directory(Config.GENERATED_FOLDER, filename)
+    """Preview generated file from /tmp"""
+    file_path = os.path.join(Config.GENERATED_FOLDER, filename)
+    if os.path.exists(file_path):
+        return send_file(file_path)
+    return jsonify({'error': 'File not found'}), 404
+
+@app.route('/api/templates/portfolio/<int:template_id>')
+def get_portfolio_template(template_id):
+    """Serve portfolio template for preview"""
+    try:
+        template_path = os.path.join(os.path.dirname(__file__), '..', 'templates', f'portfolio{template_id}.html')
+        if os.path.exists(template_path):
+            return send_file(template_path, mimetype='text/html')
+        return jsonify({'error': 'Template not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/templates/resume/<int:template_id>')
+def get_resume_template(template_id):
+    """Serve resume template for preview"""
+    try:
+        template_path = os.path.join(os.path.dirname(__file__), '..', 'templates', f'resume{template_id}.html')
+        if os.path.exists(template_path):
+            return send_file(template_path, mimetype='text/html')
+        return jsonify({'error': 'Template not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+# ... (all your existing code above)
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
-    return jsonify({'status': 'healthy', 'timestamp': datetime.now().isoformat()})
+    return jsonify({
+        'status': 'healthy',
+        'timestamp': datetime.now().isoformat(),
+        'environment': 'serverless'
+    })
 
+# ===== ADD THIS SECTION =====
+# For local development only
 if __name__ == '__main__':
-    print("🚀 Starting Portfolio Generator Backend...")
-    app.run(debug=True, port=5000)
+    print("🚀 Starting Portfolio Generator Backend (Development Mode)...")
+    print("📍 Backend running at: http://localhost:5000")
+    print("📍 Frontend should be at: http://localhost:5173")
+    print("\n📝 Available endpoints:")
+    print("   - Health Check: http://localhost:5000/api/health")
+    print("   - Generate: http://localhost:5000/api/generate")
+    print("   - Template Preview: http://localhost:5000/api/templates/portfolio/{id}")
+    print("   - Template Preview: http://localhost:5000/api/templates/resume/{id}")
+    print("\n⚡ Press CTRL+C to stop\n")
+    
+    app.run(debug=True, port=5000, host='0.0.0.0')
